@@ -74,6 +74,26 @@ lu-smt -v script.smt2
 등록한다. 세션 중 `(set-option ...)`은 첫 호출 시 default knob
 로 자동 등록.
 
+== §3.1 AOT prelude bank
+
+무거운 prelude (대표적 예: Verus의 prelude는 ~10⁵ 절)를
+`.luart` v0 아티팩트로 사전 컴파일한 후, 매 per-query
+호출에서 pre-assert된 상태로 로드한다.
+
+```bash
+# Prelude 1회 bake.  `.luart` 파일은 입력의 SHA-256과
+# bake 시의 lu-smt 버전을 기록하므로, 호출자가 이 쌍을
+# cache key로 활용 가능.
+lu-smt --aot-bake --aot-output prelude.luart prelude.smt2
+
+# 매 per-query 호출은 일반 SMT-LIB 입력을 읽기 전에
+# prelude를 pre-assert.
+lu-smt --aot-load prelude.luart query.smt2
+```
+
+`--aot-bake`와 `--aot-load`는 상호 배타적이다. 함께 주면
+typed error로 끝난다 (exit 13).
+
 == 감사 JSON
 
 `--audit-json` 은 기계가 읽을 수 있는 진단 스트림을

@@ -74,6 +74,27 @@ startup flags; either route registers a `FiniteFieldTheory`
 plugin with the engine.  Mid-session `(set-option ...)`
 auto-registers the plugin with default knobs on first call.
 
+== §3.1 AOT prelude bank
+
+Pre-compile a heavyweight prelude (Verus's prelude is the
+canonical example, ~10⁵ clauses) into a `.luart` v0
+artifact, then load it pre-asserted on every per-query
+invocation:
+
+```bash
+# One-shot bake of the prelude.  The `.luart` file records
+# a SHA-256 of the input + the lu-smt version it was baked
+# under, so callers can cache-key on the pair.
+lu-smt --aot-bake --aot-output prelude.luart prelude.smt2
+
+# Every per-query invocation pre-asserts the prelude before
+# reading the regular SMT-LIB input.
+lu-smt --aot-load prelude.luart query.smt2
+```
+
+`--aot-bake` and `--aot-load` are mutually exclusive; pairing
+them surfaces a typed error (exit 13).
+
 == Audit JSON
 
 `--audit-json` emits a machine-readable diagnostic

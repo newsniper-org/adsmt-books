@@ -75,6 +75,29 @@ werden; beide Wege registrieren ein `FiniteFieldTheory`-Plugin
 in der Engine.  Mid-Session `(set-option ...)` registriert
 das Plugin beim ersten Aufruf automatisch mit Standard-Knobs.
 
+== §3.1 AOT-Präludium-Bank
+
+Übersetzen Sie ein gewichtiges Präludium (das Präludium von
+Verus ist das kanonische Beispiel mit ~10⁵ Klauseln) einmal in
+eine `.luart` v0-Artefaktdatei und laden Sie es vorab-asserted
+in jeden Pro-Query-Aufruf:
+
+```bash
+# Einmaliges Bake des Präludiums.  Die `.luart`-Datei
+# zeichnet einen SHA-256 der Eingabe + die lu-smt-Version
+# auf, unter der gebakt wurde — der Aufrufer kann das Paar
+# als Cache-Schlüssel nutzen.
+lu-smt --aot-bake --aot-output prelude.luart prelude.smt2
+
+# Jeder Pro-Query-Aufruf assertiert das Präludium vor
+# dem Lesen der regulären SMT-LIB-Eingabe.
+lu-smt --aot-load prelude.luart query.smt2
+```
+
+`--aot-bake` und `--aot-load` schließen sich gegenseitig
+aus; ihre Kombination liefert einen typisierten Fehler
+(Exit 13).
+
 == Audit-JSON
 
 `--audit-json` gibt einen maschinenlesbaren Diagnose-Stream
