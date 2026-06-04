@@ -57,13 +57,22 @@ lu-smt -v script.smt2
 통해 설정된다.
 
 ```text
-(set-option :abductive-tier 4)        ;; enable full abduction
-(set-option :produce-models true)     ;; for sat verdicts
-(set-option :produce-unsat-cores true);; for unsat verdicts
-(set-option :produce-proofs true)     ;; emit cert
-(set-option :classical-axioms (lem))  ;; allowed axioms
-(set-option :timeout 5000)            ;; 5 second timeout
+(set-option :produce-models true)     ;; sat verdict 용
+(set-option :produce-unsat-cores true);; unsat verdict 용
+(set-option :produce-proofs true)     ;; cert 생성
+(set-option :timeout 5000)            ;; 5초 wall-clock 예산 (ms)
+(set-option :rlimit 30000000)         ;; Z3-style 리소스 한도 (~30초)
+
+;; §3.4 GF(2) Gröbner-basis 플러그인 (opt-in)
+(set-option :finite-field-periodic 32)
+(set-option :finite-field-budget-exhaustion true)
 ```
+
+`:finite-field-*` 키는 `--finite-field-periodic N` /
+`--finite-field-budget-exhaustion` startup 플래그로도 동일하게
+전달 가능. 어느 경로든 엔진에 `FiniteFieldTheory` 플러그인을
+등록한다. 세션 중 `(set-option ...)`은 첫 호출 시 default knob
+로 자동 등록.
 
 == 감사 JSON
 

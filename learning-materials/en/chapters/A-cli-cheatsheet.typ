@@ -57,13 +57,22 @@ The exit code reflects the verdict:
 These set inside the SMT-LIB script via `(set-option ...)`:
 
 ```text
-(set-option :abductive-tier 4)        ;; enable full abduction
 (set-option :produce-models true)     ;; for sat verdicts
 (set-option :produce-unsat-cores true);; for unsat verdicts
 (set-option :produce-proofs true)     ;; emit cert
-(set-option :classical-axioms (lem))  ;; allowed axioms
-(set-option :timeout 5000)            ;; 5 second timeout
+(set-option :timeout 5000)            ;; 5 second wall-clock budget (ms)
+(set-option :rlimit 30000000)         ;; Z3-style resource limit (~30 s)
+
+;; §3.4 GF(2) Gröbner-basis plugin (opt-in)
+(set-option :finite-field-periodic 32)
+(set-option :finite-field-budget-exhaustion true)
 ```
+
+The `:finite-field-*` keys can also be passed as
+`--finite-field-periodic N` / `--finite-field-budget-exhaustion`
+startup flags; either route registers a `FiniteFieldTheory`
+plugin with the engine.  Mid-session `(set-option ...)`
+auto-registers the plugin with default knobs on first call.
 
 == Audit JSON
 

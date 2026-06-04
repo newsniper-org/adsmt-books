@@ -57,13 +57,23 @@ Der Exit-Code spiegelt das Verdikt wider:
 Diese werden innerhalb des SMT-LIB-Skripts via `(set-option ...)` gesetzt:
 
 ```text
-(set-option :abductive-tier 4)        ;; enable full abduction
-(set-option :produce-models true)     ;; for sat verdicts
-(set-option :produce-unsat-cores true);; for unsat verdicts
-(set-option :produce-proofs true)     ;; emit cert
-(set-option :classical-axioms (lem))  ;; allowed axioms
-(set-option :timeout 5000)            ;; 5 second timeout
+(set-option :produce-models true)     ;; für Sat-Verdikte
+(set-option :produce-unsat-cores true);; für Unsat-Verdikte
+(set-option :produce-proofs true)     ;; Zertifikat emittieren
+(set-option :timeout 5000)            ;; 5 Sekunden Wanduhrbudget (ms)
+(set-option :rlimit 30000000)         ;; Z3-Stil-Ressourcenlimit (~30 s)
+
+;; §3.4 GF(2) Gröbner-Basis-Plugin (opt-in)
+(set-option :finite-field-periodic 32)
+(set-option :finite-field-budget-exhaustion true)
 ```
+
+Die `:finite-field-*` Schlüssel können auch als
+`--finite-field-periodic N` /
+`--finite-field-budget-exhaustion` Startflags übergeben
+werden; beide Wege registrieren ein `FiniteFieldTheory`-Plugin
+in der Engine.  Mid-Session `(set-option ...)` registriert
+das Plugin beim ersten Aufruf automatisch mit Standard-Knobs.
 
 == Audit-JSON
 

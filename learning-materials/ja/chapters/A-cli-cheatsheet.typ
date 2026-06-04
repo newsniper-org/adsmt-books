@@ -57,13 +57,22 @@ lu-smt -v script.smt2
 内部で設定する。
 
 ```text
-(set-option :abductive-tier 4)        ;; enable full abduction
-(set-option :produce-models true)     ;; for sat verdicts
-(set-option :produce-unsat-cores true);; for unsat verdicts
-(set-option :produce-proofs true)     ;; emit cert
-(set-option :classical-axioms (lem))  ;; allowed axioms
-(set-option :timeout 5000)            ;; 5 second timeout
+(set-option :produce-models true)     ;; sat verdict 用
+(set-option :produce-unsat-cores true);; unsat verdict 用
+(set-option :produce-proofs true)     ;; cert 出力
+(set-option :timeout 5000)            ;; 5 秒 wall-clock 予算 (ms)
+(set-option :rlimit 30000000)         ;; Z3-style リソース上限 (~30 秒)
+
+;; §3.4 GF(2) Gröbner-basis プラグイン (opt-in)
+(set-option :finite-field-periodic 32)
+(set-option :finite-field-budget-exhaustion true)
 ```
+
+`:finite-field-*` キーは `--finite-field-periodic N` /
+`--finite-field-budget-exhaustion` startup フラグとしても
+等価。どちらの経路でも `FiniteFieldTheory` プラグインを
+エンジンに登録する。セッション中 `(set-option ...)` は
+最初の呼び出しで default knob 値で自動登録される。
 
 == Audit JSON
 
