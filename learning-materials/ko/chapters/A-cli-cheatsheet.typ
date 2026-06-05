@@ -94,6 +94,45 @@ lu-smt --aot-load prelude.luart query.smt2
 `--aot-bake`와 `--aot-load`는 상호 배타적이다. 함께 주면
 typed error로 끝난다 (exit 13).
 
+== §3.5 JIT-on-AOT-prelude
+
+`--aot-bake` 모드는 v0 섹션 다음에 v1 CDCL 섹션을 작성하는
+composable `--aot-include-cdcl` 확장을 갖는다. v1 섹션은
+post-flatten clauses + 초기 BCP trail + two-watched index +
+VSIDS + phase-save를 포함한다. v1 header에는 lu-smt 바이너리의
+SHA-256이 기록되어 source-level `flatten_version` knob가
+놓치는 toolchain-drift도 catch한다.
+
+```bash
+# v0 Term-DAG + v1 CDCL 섹션 bake.
+lu-smt --aot-bake --aot-include-cdcl --aot-output prelude.luart \
+       prelude.smt2
+
+# `--aot-load`는 v1 섹션을 자동 감지하여
+# `Solver::with_aot_cdcl` 경로로 라우팅. 별도의 플래그 없이도
+# 로더가 CDCL 섹션을 가져온다.
+lu-smt --aot-load prelude.luart query.smt2
+```
+
+`--aot-include-cdcl`는 `--aot-bake`을 요구하며 (오용 시 exit
+12), `--aot-load`와 상호 배타적이다 (exit 12).
+
+CLI는 또한 기록된 CDCL trace를 위한 별도의 `.lutrace` v0
+아티팩트 plumbing을 제공한다 (event 스트림을 채우는 recorder
+훅은 §3.5.F follow-up):
+
+```bash
+# (v0에서는 빈) `.lutrace` 아티팩트 emit.
+lu-smt --jit-trace-emit trace.lutrace query.smt2
+
+# 미리 emit된 `.lutrace`을 load하여 매 `(check-sat)` 전에
+# §3.5.F의 replay-evaluation gate에 제공.
+lu-smt --jit-trace-load trace.lutrace query.smt2
+```
+
+`--jit-trace-emit`과 `--jit-trace-load`는 상호 배타적이다
+(exit 12).
+
 == 감사 JSON
 
 `--audit-json` 은 기계가 읽을 수 있는 진단 스트림을

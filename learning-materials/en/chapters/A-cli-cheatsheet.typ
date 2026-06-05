@@ -95,6 +95,48 @@ lu-smt --aot-load prelude.luart query.smt2
 `--aot-bake` and `--aot-load` are mutually exclusive; pairing
 them surfaces a typed error (exit 13).
 
+== §3.5 JIT-on-AOT-prelude
+
+The `--aot-bake` mode grows a composable `--aot-include-cdcl`
+extension that writes a v1 CDCL section after the v0
+sections — post-flatten clauses + initial BCP trail +
+two-watched index + VSIDS + phase-save.  The v1 header
+carries a SHA-256 of the lu-smt binary so reloading detects
+silent tooling-drift the source-level `flatten_version` knob
+misses.
+
+```bash
+# Bake the v0 Term-DAG + the v1 CDCL section.
+lu-smt --aot-bake --aot-include-cdcl --aot-output prelude.luart \
+       prelude.smt2
+
+# `--aot-load` auto-detects the v1 section and routes through
+# `Solver::with_aot_cdcl`; the loader picks up the CDCL
+# section without needing a dedicated flag.
+lu-smt --aot-load prelude.luart query.smt2
+```
+
+`--aot-include-cdcl` requires `--aot-bake` (exit 12 on
+misuse) and is mutually exclusive with `--aot-load` (exit
+12).
+
+The CLI additionally surfaces a separate `.lutrace` v0
+artefact plumbing for recorded CDCL traces (the recorder
+hook that populates the event stream lands in the §3.5.F
+follow-up):
+
+```bash
+# Emit an (empty in v0) `.lutrace` artefact.
+lu-smt --jit-trace-emit trace.lutrace query.smt2
+
+# Load a previously-emitted `.lutrace` and offer it to the
+# §3.5.F replay-evaluation gate before every `(check-sat)`.
+lu-smt --jit-trace-load trace.lutrace query.smt2
+```
+
+`--jit-trace-emit` and `--jit-trace-load` are mutually
+exclusive (exit 12).
+
 == Audit JSON
 
 `--audit-json` emits a machine-readable diagnostic

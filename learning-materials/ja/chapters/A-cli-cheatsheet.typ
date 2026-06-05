@@ -94,6 +94,46 @@ lu-smt --aot-load prelude.luart query.smt2
 `--aot-bake` と `--aot-load` は相互排他。両方指定すると
 typed error で終了する (exit 13)。
 
+== §3.5 JIT-on-AOT-prelude
+
+`--aot-bake` モードは v0 セクションの後に v1 CDCL セクションを
+書き込む composable `--aot-include-cdcl` 拡張を持つ。v1
+セクションには post-flatten clauses + 初期 BCP trail +
+two-watched index + VSIDS + phase-save が含まれる。v1
+ヘッダーは lu-smt バイナリの SHA-256 を記録するので、
+source-level の `flatten_version` knob では見逃される
+toolchain-drift も検出する。
+
+```bash
+# v0 Term-DAG + v1 CDCL セクションを bake する。
+lu-smt --aot-bake --aot-include-cdcl --aot-output prelude.luart \
+       prelude.smt2
+
+# `--aot-load` は v1 セクションを自動検出し、
+# `Solver::with_aot_cdcl` 経由でルーティング。専用フラグなしで
+# ローダーが CDCL セクションを取得する。
+lu-smt --aot-load prelude.luart query.smt2
+```
+
+`--aot-include-cdcl` は `--aot-bake` を必要とし (誤用時 exit
+12)、`--aot-load` と相互排他である (exit 12)。
+
+CLI はさらに、記録済み CDCL trace 用の別個の `.lutrace` v0
+アーティファクト plumbing を提供する (event ストリームを
+populate する recorder hook は §3.5.F フォローアップで導入):
+
+```bash
+# (v0 では空の) `.lutrace` アーティファクトを emit する。
+lu-smt --jit-trace-emit trace.lutrace query.smt2
+
+# 事前 emit 済みの `.lutrace` を load し、各 `(check-sat)`
+# 前に §3.5.F の replay-evaluation gate に提供する。
+lu-smt --jit-trace-load trace.lutrace query.smt2
+```
+
+`--jit-trace-emit` と `--jit-trace-load` は相互排他である
+(exit 12)。
+
 == Audit JSON
 
 `--audit-json` は機械可読な診断ストリームを発する。

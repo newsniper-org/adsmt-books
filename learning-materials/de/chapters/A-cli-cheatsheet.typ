@@ -98,6 +98,49 @@ lu-smt --aot-load prelude.luart query.smt2
 aus; ihre Kombination liefert einen typisierten Fehler
 (Exit 13).
 
+== §3.5 JIT-on-AOT-prelude
+
+Der `--aot-bake`-Modus erhält die zusammenstellbare
+Erweiterung `--aot-include-cdcl`, die nach den v0-Sektionen
+eine v1-CDCL-Sektion schreibt — Post-Flatten-Klauseln + die
+anfängliche BCP-Spur + den Two-Watched-Index + VSIDS +
+Phase-Save.  Der v1-Header trägt einen SHA-256 des
+lu-smt-Binärs, damit beim Nachladen das stille
+Werkzeug-Drift erkannt wird, das der quelllevelige
+`flatten_version`-Knopf übersieht.
+
+```bash
+# Bake des v0-Term-DAG + der v1-CDCL-Sektion.
+lu-smt --aot-bake --aot-include-cdcl --aot-output prelude.luart \
+       prelude.smt2
+
+# `--aot-load` erkennt die v1-Sektion automatisch und leitet
+# über `Solver::with_aot_cdcl` weiter; der Lader nimmt die
+# CDCL-Sektion ohne dediziertes Flag auf.
+lu-smt --aot-load prelude.luart query.smt2
+```
+
+`--aot-include-cdcl` benötigt `--aot-bake` (Exit 12 bei
+Missbrauch) und schließt sich mit `--aot-load` gegenseitig
+aus (Exit 12).
+
+Die CLI bietet zusätzlich getrennte `.lutrace`-v0-Artefakt-
+Plumbing für aufgezeichnete CDCL-Spuren (der Recorder-Hook,
+der den Event-Strom füllt, landet im §3.5.F-Follow-up):
+
+```bash
+# (In v0 leeres) `.lutrace`-Artefakt emittieren.
+lu-smt --jit-trace-emit trace.lutrace query.smt2
+
+# Ein zuvor emittiertes `.lutrace` laden und vor jedem
+# `(check-sat)` an das §3.5.F-Replay-Evaluation-Gate
+# weiterreichen.
+lu-smt --jit-trace-load trace.lutrace query.smt2
+```
+
+`--jit-trace-emit` und `--jit-trace-load` schließen sich
+gegenseitig aus (Exit 12).
+
 == Audit-JSON
 
 `--audit-json` gibt einen maschinenlesbaren Diagnose-Stream
