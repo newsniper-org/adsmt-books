@@ -117,17 +117,21 @@ lu-smt --aot-load prelude.luart query.smt2
 `--aot-include-cdcl`는 `--aot-bake`을 요구하며 (오용 시 exit
 12), `--aot-load`와 상호 배타적이다 (exit 12).
 
-CLI는 또한 기록된 CDCL trace를 위한 별도의 `.lutrace` v0
-아티팩트 plumbing을 제공한다 (event 스트림을 채우는 recorder
-훅은 §3.5.F follow-up):
+CLI는 또한 기록된 CDCL trace를 위한 `.lutrace` 아티팩트를
+제공한다. emit된 trace는 기록된 event 스트림과 더불어 그
+formula의 정준 GF(2) 대수 signature를 싣는다. load된 trace는
+(`--aot-load` prelude가 함께 활성화된 경우) 매 `(check-sat)`
+전에 consult되며, signature가 정확히 일치하면 기록된 `unsat`이
+solve를 short-circuit한다:
 
 ```bash
-# (v0에서는 빈) `.lutrace` 아티팩트 emit.
+# `.lutrace` emit (CDCL event + GF(2) signature).
 lu-smt --jit-trace-emit trace.lutrace query.smt2
 
 # 미리 emit된 `.lutrace`을 load하여 매 `(check-sat)` 전에
-# §3.5.F의 replay-evaluation gate에 제공.
-lu-smt --jit-trace-load trace.lutrace query.smt2
+# consult (--aot-load와 함께 사용).
+lu-smt --aot-load prelude.luart \
+       --jit-trace-load trace.lutrace query.smt2
 ```
 
 `--jit-trace-emit`과 `--jit-trace-load`는 상호 배타적이다

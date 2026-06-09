@@ -124,18 +124,23 @@ lu-smt --aot-load prelude.luart query.smt2
 Missbrauch) und schließt sich mit `--aot-load` gegenseitig
 aus (Exit 12).
 
-Die CLI bietet zusätzlich getrennte `.lutrace`-v0-Artefakt-
-Plumbing für aufgezeichnete CDCL-Spuren (der Recorder-Hook,
-der den Event-Strom füllt, landet im §3.5.F-Follow-up):
+Die CLI bietet zusätzlich ein `.lutrace`-Artefakt für
+aufgezeichnete CDCL-Spuren. Die emittierte Spur trägt den
+aufgezeichneten Event-Strom sowie die kanonische
+GF(2)-Algebra-Signatur der Formel; eine geladene Spur wird
+bei jedem `(check-sat)` konsultiert (sofern auch ein
+`--aot-load`-Prelude aktiv ist), und bei exakter
+Signatur-Übereinstimmung kürzt das aufgezeichnete `unsat`
+den Solve ab:
 
 ```bash
-# (In v0 leeres) `.lutrace`-Artefakt emittieren.
+# `.lutrace` emittieren (CDCL-Events + GF(2)-Signatur).
 lu-smt --jit-trace-emit trace.lutrace query.smt2
 
 # Ein zuvor emittiertes `.lutrace` laden und vor jedem
-# `(check-sat)` an das §3.5.F-Replay-Evaluation-Gate
-# weiterreichen.
-lu-smt --jit-trace-load trace.lutrace query.smt2
+# `(check-sat)` konsultieren (mit --aot-load kombinieren).
+lu-smt --aot-load prelude.luart \
+       --jit-trace-load trace.lutrace query.smt2
 ```
 
 `--jit-trace-emit` und `--jit-trace-load` schließen sich

@@ -120,18 +120,22 @@ lu-smt --aot-load prelude.luart query.smt2
 misuse) and is mutually exclusive with `--aot-load` (exit
 12).
 
-The CLI additionally surfaces a separate `.lutrace` v0
-artefact plumbing for recorded CDCL traces (the recorder
-hook that populates the event stream lands in the §3.5.F
-follow-up):
+The CLI additionally surfaces a `.lutrace` artefact for
+recorded CDCL traces. The emitted trace carries the recorded
+event stream plus the canonical GF(2) algebraic signature of
+the formula; a loaded trace is consulted at every
+`(check-sat)` (when an `--aot-load` prelude is also active),
+and on an exact signature match the recorded `unsat`
+short-circuits the solve:
 
 ```bash
-# Emit an (empty in v0) `.lutrace` artefact.
+# Emit a `.lutrace` (CDCL events + GF(2) signature).
 lu-smt --jit-trace-emit trace.lutrace query.smt2
 
-# Load a previously-emitted `.lutrace` and offer it to the
-# §3.5.F replay-evaluation gate before every `(check-sat)`.
-lu-smt --jit-trace-load trace.lutrace query.smt2
+# Load a previously-emitted `.lutrace` and consult it before
+# every `(check-sat)` (pair with --aot-load).
+lu-smt --aot-load prelude.luart \
+       --jit-trace-load trace.lutrace query.smt2
 ```
 
 `--jit-trace-emit` and `--jit-trace-load` are mutually

@@ -118,17 +118,22 @@ lu-smt --aot-load prelude.luart query.smt2
 `--aot-include-cdcl` は `--aot-bake` を必要とし (誤用時 exit
 12)、`--aot-load` と相互排他である (exit 12)。
 
-CLI はさらに、記録済み CDCL trace 用の別個の `.lutrace` v0
-アーティファクト plumbing を提供する (event ストリームを
-populate する recorder hook は §3.5.F フォローアップで導入):
+CLI はさらに、記録済み CDCL trace 用の `.lutrace`
+アーティファクトを提供する。emit された trace は記録済み
+event ストリームに加え、その formula の正準 GF(2) 代数
+signature を保持する。load された trace は (`--aot-load`
+prelude も有効な場合) 各 `(check-sat)` 前に consult され、
+signature が厳密に一致すれば記録済みの `unsat` が solve を
+short-circuit する:
 
 ```bash
-# (v0 では空の) `.lutrace` アーティファクトを emit する。
+# `.lutrace` を emit (CDCL event + GF(2) signature)。
 lu-smt --jit-trace-emit trace.lutrace query.smt2
 
 # 事前 emit 済みの `.lutrace` を load し、各 `(check-sat)`
-# 前に §3.5.F の replay-evaluation gate に提供する。
-lu-smt --jit-trace-load trace.lutrace query.smt2
+# 前に consult する (--aot-load と併用)。
+lu-smt --aot-load prelude.luart \
+       --jit-trace-load trace.lutrace query.smt2
 ```
 
 `--jit-trace-emit` と `--jit-trace-load` は相互排他である
