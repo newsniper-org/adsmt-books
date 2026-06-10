@@ -122,19 +122,18 @@ misuse) and is mutually exclusive with `--aot-load` (exit
 
 The CLI additionally surfaces a `.lutrace` artefact for
 recorded CDCL traces. The emitted trace carries the recorded
-event stream plus the canonical GF(2) algebraic signature of
-the formula; a loaded trace is consulted at every
-`(check-sat)` (when an `--aot-load` prelude is also active),
-and on an exact signature match the recorded `unsat`
-short-circuits the solve:
+event stream plus a 32-byte canonical clause-set digest of the
+formula; a loaded trace is consulted at every `(check-sat)`
+(when an `--aot-load` prelude is also active), and on an exact
+digest match the recorded `unsat` short-circuits the solve:
 
 ```bash
-# Emit a `.lutrace` (CDCL events + GF(2) signature).
+# Emit a `.lutrace` (CDCL events + clause-set digest).
 lu-smt --jit-trace-emit trace.lutrace query.smt2
 
-# Slim (verdict-only): emit just the signature + a terminal
+# Slim (verdict-only): emit just the digest + a terminal
 # conflict — what the consult reads — dropping the propagation
-# stream (MB to hundreds of bytes). Only on a clean `unsat`.
+# stream. Only on a clean `unsat`.
 lu-smt --jit-trace-emit-slim slim.lutrace query.smt2
 
 # Load a previously-emitted `.lutrace` (full or slim) and

@@ -126,21 +126,20 @@ aus (Exit 12).
 
 Die CLI bietet zusätzlich ein `.lutrace`-Artefakt für
 aufgezeichnete CDCL-Spuren. Die emittierte Spur trägt den
-aufgezeichneten Event-Strom sowie die kanonische
-GF(2)-Algebra-Signatur der Formel; eine geladene Spur wird
+aufgezeichneten Event-Strom sowie einen kanonischen 32-Byte-
+Klauselmengen-Digest der Formel; eine geladene Spur wird
 bei jedem `(check-sat)` konsultiert (sofern auch ein
 `--aot-load`-Prelude aktiv ist), und bei exakter
-Signatur-Übereinstimmung kürzt das aufgezeichnete `unsat`
+Digest-Übereinstimmung kürzt das aufgezeichnete `unsat`
 den Solve ab:
 
 ```bash
-# `.lutrace` emittieren (CDCL-Events + GF(2)-Signatur).
+# `.lutrace` emittieren (CDCL-Events + Klauselmengen-Digest).
 lu-smt --jit-trace-emit trace.lutrace query.smt2
 
-# Slim (nur Verdikt): nur die Signatur + einen terminalen
+# Slim (nur Verdikt): nur den Digest + einen terminalen
 # Conflict emittieren — was die Konsultation liest — und den
-# Propagation-Strom verwerfen (MB zu hunderten Bytes). Nur bei
-# einem sauberen `unsat`.
+# Propagation-Strom verwerfen. Nur bei einem sauberen `unsat`.
 lu-smt --jit-trace-emit-slim slim.lutrace query.smt2
 
 # Ein zuvor emittiertes `.lutrace` (voll oder slim) laden und

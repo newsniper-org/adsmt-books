@@ -119,17 +119,17 @@ lu-smt --aot-load prelude.luart query.smt2
 
 CLI는 또한 기록된 CDCL trace를 위한 `.lutrace` 아티팩트를
 제공한다. emit된 trace는 기록된 event 스트림과 더불어 그
-formula의 정준 GF(2) 대수 signature를 싣는다. load된 trace는
-(`--aot-load` prelude가 함께 활성화된 경우) 매 `(check-sat)`
-전에 consult되며, signature가 정확히 일치하면 기록된 `unsat`이
-solve를 short-circuit한다:
+formula의 32바이트 정준 clause-set digest를 싣는다. load된
+trace는 (`--aot-load` prelude가 함께 활성화된 경우) 매
+`(check-sat)` 전에 consult되며, digest가 정확히 일치하면 기록된
+`unsat`이 solve를 short-circuit한다:
 
 ```bash
-# `.lutrace` emit (CDCL event + GF(2) signature).
+# `.lutrace` emit (CDCL event + clause-set digest).
 lu-smt --jit-trace-emit trace.lutrace query.smt2
 
-# slim(verdict-only): consult가 읽는 signature + terminal
-# conflict만 emit하고 propagation 스트림은 드롭(MB→수백 바이트).
+# slim(verdict-only): consult가 읽는 digest + terminal
+# conflict만 emit하고 propagation 스트림은 드롭.
 # clean `unsat`일 때만.
 lu-smt --jit-trace-emit-slim slim.lutrace query.smt2
 

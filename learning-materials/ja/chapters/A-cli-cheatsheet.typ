@@ -120,19 +120,19 @@ lu-smt --aot-load prelude.luart query.smt2
 
 CLI はさらに、記録済み CDCL trace 用の `.lutrace`
 アーティファクトを提供する。emit された trace は記録済み
-event ストリームに加え、その formula の正準 GF(2) 代数
-signature を保持する。load された trace は (`--aot-load`
-prelude も有効な場合) 各 `(check-sat)` 前に consult され、
-signature が厳密に一致すれば記録済みの `unsat` が solve を
-short-circuit する:
+event ストリームに加え、その formula の 32 バイト正準
+clause-set digest を保持する。load された trace は
+(`--aot-load` prelude も有効な場合) 各 `(check-sat)` 前に
+consult され、digest が厳密に一致すれば記録済みの `unsat` が
+solve を short-circuit する:
 
 ```bash
-# `.lutrace` を emit (CDCL event + GF(2) signature)。
+# `.lutrace` を emit (CDCL event + clause-set digest)。
 lu-smt --jit-trace-emit trace.lutrace query.smt2
 
-# slim (verdict-only): consult が読む signature + terminal
-# conflict だけを emit し、propagation ストリームを破棄
-# (MB→数百バイト)。clean な `unsat` のときのみ。
+# slim (verdict-only): consult が読む digest + terminal
+# conflict だけを emit し、propagation ストリームを破棄。
+# clean な `unsat` のときのみ。
 lu-smt --jit-trace-emit-slim slim.lutrace query.smt2
 
 # 事前 emit 済みの `.lutrace` (full または slim) を load し、
