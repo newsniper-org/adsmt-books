@@ -128,14 +128,19 @@ solve를 short-circuit한다:
 # `.lutrace` emit (CDCL event + GF(2) signature).
 lu-smt --jit-trace-emit trace.lutrace query.smt2
 
-# 미리 emit된 `.lutrace`을 load하여 매 `(check-sat)` 전에
-# consult (--aot-load와 함께 사용).
+# slim(verdict-only): consult가 읽는 signature + terminal
+# conflict만 emit하고 propagation 스트림은 드롭(MB→수백 바이트).
+# clean `unsat`일 때만.
+lu-smt --jit-trace-emit-slim slim.lutrace query.smt2
+
+# 미리 emit된 `.lutrace`(full 또는 slim)을 load하여 매
+# `(check-sat)` 전에 consult (--aot-load와 함께 사용).
 lu-smt --aot-load prelude.luart \
        --jit-trace-load trace.lutrace query.smt2
 ```
 
-`--jit-trace-emit`과 `--jit-trace-load`는 상호 배타적이다
-(exit 12).
+`--jit-trace-emit`, `--jit-trace-emit-slim`, `--jit-trace-load`는
+상호 배타적이다 (exit 12).
 
 == 감사 JSON
 

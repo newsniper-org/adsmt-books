@@ -137,14 +137,20 @@ den Solve ab:
 # `.lutrace` emittieren (CDCL-Events + GF(2)-Signatur).
 lu-smt --jit-trace-emit trace.lutrace query.smt2
 
-# Ein zuvor emittiertes `.lutrace` laden und vor jedem
-# `(check-sat)` konsultieren (mit --aot-load kombinieren).
+# Slim (nur Verdikt): nur die Signatur + einen terminalen
+# Conflict emittieren — was die Konsultation liest — und den
+# Propagation-Strom verwerfen (MB zu hunderten Bytes). Nur bei
+# einem sauberen `unsat`.
+lu-smt --jit-trace-emit-slim slim.lutrace query.smt2
+
+# Ein zuvor emittiertes `.lutrace` (voll oder slim) laden und
+# vor jedem `(check-sat)` konsultieren (mit --aot-load kombinieren).
 lu-smt --aot-load prelude.luart \
        --jit-trace-load trace.lutrace query.smt2
 ```
 
-`--jit-trace-emit` und `--jit-trace-load` schließen sich
-gegenseitig aus (Exit 12).
+`--jit-trace-emit`, `--jit-trace-emit-slim` und
+`--jit-trace-load` schließen sich gegenseitig aus (Exit 12).
 
 == Audit-JSON
 

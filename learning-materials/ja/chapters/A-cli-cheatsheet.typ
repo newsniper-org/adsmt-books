@@ -130,14 +130,19 @@ short-circuit する:
 # `.lutrace` を emit (CDCL event + GF(2) signature)。
 lu-smt --jit-trace-emit trace.lutrace query.smt2
 
-# 事前 emit 済みの `.lutrace` を load し、各 `(check-sat)`
-# 前に consult する (--aot-load と併用)。
+# slim (verdict-only): consult が読む signature + terminal
+# conflict だけを emit し、propagation ストリームを破棄
+# (MB→数百バイト)。clean な `unsat` のときのみ。
+lu-smt --jit-trace-emit-slim slim.lutrace query.smt2
+
+# 事前 emit 済みの `.lutrace` (full または slim) を load し、
+# 各 `(check-sat)` 前に consult する (--aot-load と併用)。
 lu-smt --aot-load prelude.luart \
        --jit-trace-load trace.lutrace query.smt2
 ```
 
-`--jit-trace-emit` と `--jit-trace-load` は相互排他である
-(exit 12)。
+`--jit-trace-emit`、`--jit-trace-emit-slim`、`--jit-trace-load`
+は相互排他である (exit 12)。
 
 == Audit JSON
 

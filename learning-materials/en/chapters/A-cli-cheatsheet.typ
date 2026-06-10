@@ -132,14 +132,19 @@ short-circuits the solve:
 # Emit a `.lutrace` (CDCL events + GF(2) signature).
 lu-smt --jit-trace-emit trace.lutrace query.smt2
 
-# Load a previously-emitted `.lutrace` and consult it before
-# every `(check-sat)` (pair with --aot-load).
+# Slim (verdict-only): emit just the signature + a terminal
+# conflict — what the consult reads — dropping the propagation
+# stream (MB to hundreds of bytes). Only on a clean `unsat`.
+lu-smt --jit-trace-emit-slim slim.lutrace query.smt2
+
+# Load a previously-emitted `.lutrace` (full or slim) and
+# consult it before every `(check-sat)` (pair with --aot-load).
 lu-smt --aot-load prelude.luart \
        --jit-trace-load trace.lutrace query.smt2
 ```
 
-`--jit-trace-emit` and `--jit-trace-load` are mutually
-exclusive (exit 12).
+`--jit-trace-emit`, `--jit-trace-emit-slim` and
+`--jit-trace-load` are mutually exclusive (exit 12).
 
 == Audit JSON
 
