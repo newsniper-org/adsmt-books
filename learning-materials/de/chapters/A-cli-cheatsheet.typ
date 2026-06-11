@@ -75,6 +75,35 @@ werden; beide Wege registrieren ein `FiniteFieldTheory`-Plugin
 in der Engine.  Mid-Session `(set-option ...)` registriert
 das Plugin beim ersten Aufruf automatisch mit Standard-Knobs.
 
+== Abduktives Schließen (abductive reasoning) — SMT-LIB-Oberfläche
+
+adsmts abduktives Verdikt — _welche Hypothese würde dieses Ziel
+erfüllen?_ — ist als explizite, cvc5-kompatible SMT-LIB-Oberfläche
+erreichbar. Deklariere das Vokabular zulässiger Hypothesen und
+fordere dann einen Abdukt für ein Ziel an:
+
+```text
+;; Muster registrieren, die die Engine als Fix vorschlagen darf.
+(declare-abducible (> x 0))
+(declare-abducible (> x 0) "x must be positive")  ;; optionale Erklärung
+
+;; adsmt-nativ: die gesamte gerankte Kandidatenmenge als
+;; einzeiliges `abductive`-JSON ausgeben (die Verus- / Lean-
+;; Reporter parsen dies).
+(abduce (>= x 1))
+
+;; cvc5-Abduktionserweiterung: den bestplatzierten Abdukt als
+;; re-parsbares `(define-fun A () Bool (> x 0))` ausgeben.
+(get-abduct A (>= x 1))
+;; Die übrigen gerankten Abdukte durchlaufen; `(fail)` am Ende.
+(get-abduct-next)
+```
+
+Ein Abdukt ist _beratend_ — das deduktive (`unsat`) Verdikt ist
+das vertrauenswürdige; eine abduzierte Hypothese muss der Aufrufer
+(als Vorbedingung / Invariante / Lemma) rechtfertigen, niemals
+stillschweigend annehmen.
+
 == §3.1 AOT-Präludium-Bank
 
 Übersetzen Sie ein gewichtiges Präludium (das Präludium von

@@ -74,6 +74,35 @@ startup flags; either route registers a `FiniteFieldTheory`
 plugin with the engine.  Mid-session `(set-option ...)`
 auto-registers the plugin with default knobs on first call.
 
+== Abductive reasoning (SMT-LIB surface)
+
+adsmt's abductive verdict — _what hypothesis would discharge
+this goal?_ — is reachable as an explicit, cvc5-compatible
+SMT-LIB surface. Declare the vocabulary of allowed
+hypotheses, then ask for an abduct on a goal:
+
+```text
+;; Register the patterns the engine may propose as a fix.
+(declare-abducible (> x 0))
+(declare-abducible (> x 0) "x must be positive")  ;; optional explanation
+
+;; adsmt-native: emit the full ranked candidate set as the
+;; single-line `abductive` JSON (the Verus / Lean reporters
+;; parse this).
+(abduce (>= x 1))
+
+;; cvc5 abduction extension: emit the top-ranked abduct as a
+;; re-parseable `(define-fun A () Bool (> x 0))`.
+(get-abduct A (>= x 1))
+;; Walk the remaining ranked abducts; `(fail)` when exhausted.
+(get-abduct-next)
+```
+
+An abduct is _advisory_ — the deductive (`unsat`) verdict is
+the trusted one; an abduced hypothesis is something the caller
+must justify (as a precondition / invariant / lemma), never
+silently assume.
+
 == §3.1 AOT prelude bank
 
 Pre-compile a heavyweight prelude (Verus's prelude is the

@@ -74,6 +74,33 @@ lu-smt -v script.smt2
 등록한다. 세션 중 `(set-option ...)`은 첫 호출 시 default knob
 로 자동 등록.
 
+== 가설추론(abductive reasoning) — SMT-LIB 표면
+
+adsmt의 가설추론 verdict — _이 goal을 discharge하려면 어떤
+가설이 필요한가?_ — 는 명시적이고 cvc5 호환인 SMT-LIB 표면으로
+접근할 수 있다. 허용 가설의 어휘를 선언한 뒤, goal에 대해
+abduct를 요청한다:
+
+```text
+;; 엔진이 fix로 제안할 수 있는 패턴을 등록.
+(declare-abducible (> x 0))
+(declare-abducible (> x 0) "x must be positive")  ;; 선택적 설명
+
+;; adsmt-native: 랭킹된 전체 후보를 단일 라인 `abductive`
+;; JSON으로 방출 (Verus / Lean 리포터가 파싱).
+(abduce (>= x 1))
+
+;; cvc5 abduction 확장: 최상위 abduct를 재파싱 가능한
+;; `(define-fun A () Bool (> x 0))`로 방출.
+(get-abduct A (>= x 1))
+;; 남은 랭킹 abduct들을 순회; 소진되면 `(fail)`.
+(get-abduct-next)
+```
+
+abduct는 _권고_일 뿐이다 — 신뢰되는 verdict는 연역(`unsat`)이고,
+abduce된 가설은 호출자가 (사전조건 / 불변식 / lemma로)
+정당화해야 하는 것이지 절대 조용히 가정하지 않는다.
+
 == §3.1 AOT prelude bank
 
 무거운 prelude (대표적 예: Verus의 prelude는 ~10⁵ 절)를

@@ -74,6 +74,34 @@ lu-smt -v script.smt2
 エンジンに登録する。セッション中 `(set-option ...)` は
 最初の呼び出しで default knob 値で自動登録される。
 
+== アブダクション推論 (abductive reasoning) — SMT-LIB サーフェス
+
+adsmt のアブダクション verdict — _この goal を discharge する
+にはどの仮説が必要か?_ — は明示的かつ cvc5 互換の SMT-LIB
+サーフェスとしてアクセスできる。許容仮説の語彙を宣言し、goal に
+対して abduct を要求する:
+
+```text
+;; エンジンが fix として提案しうるパターンを登録。
+(declare-abducible (> x 0))
+(declare-abducible (> x 0) "x must be positive")  ;; 任意の説明
+
+;; adsmt-native: ランク付けされた全候補を単一行の `abductive`
+;; JSON で出力 (Verus / Lean レポーターが parse する)。
+(abduce (>= x 1))
+
+;; cvc5 abduction 拡張: 最上位の abduct を再 parse 可能な
+;; `(define-fun A () Bool (> x 0))` として出力。
+(get-abduct A (>= x 1))
+;; 残りのランク付き abduct を巡回; 尽きたら `(fail)`。
+(get-abduct-next)
+```
+
+abduct は _助言_ にすぎない — 信頼される verdict は演繹
+(`unsat`) であり、abduce された仮説は呼び出し側が (事前条件 /
+不変条件 / lemma として) 正当化すべきもので、決して暗黙には
+仮定しない。
+
 == §3.1 AOT prelude bank
 
 重量級の prelude (Verus の prelude が典型例で ~10⁵ 節)
