@@ -126,8 +126,12 @@ aus (Exit 12).
 
 Die CLI bietet zusätzlich ein `.lutrace`-Artefakt für
 aufgezeichnete CDCL-Spuren. Die emittierte Spur trägt den
-aufgezeichneten Event-Strom sowie einen kanonischen 32-Byte-
-Klauselmengen-Digest der Formel; eine geladene Spur wird
+aufgezeichneten Event-Strom sowie einen 32-Byte-
+Klauselmengen-Digest der Formel. Der Digest wird inkrementell
+gefaltet: Der reihenfolgeunabhängige Klausel-Fold des Preludes
+wird beim `--aot-bake` in die Bank vorberechnet, sodass die
+Konsultation pro `(check-sat)` mit dem Query-Delta skaliert,
+nicht mit dem gesamten Prelude. Eine geladene Spur wird
 bei jedem `(check-sat)` konsultiert (sofern auch ein
 `--aot-load`-Prelude aktiv ist), und bei exakter
 Digest-Übereinstimmung kürzt das aufgezeichnete `unsat`

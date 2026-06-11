@@ -119,10 +119,13 @@ lu-smt --aot-load prelude.luart query.smt2
 
 CLI는 또한 기록된 CDCL trace를 위한 `.lutrace` 아티팩트를
 제공한다. emit된 trace는 기록된 event 스트림과 더불어 그
-formula의 32바이트 정준 clause-set digest를 싣는다. load된
-trace는 (`--aot-load` prelude가 함께 활성화된 경우) 매
-`(check-sat)` 전에 consult되며, digest가 정확히 일치하면 기록된
-`unsat`이 solve를 short-circuit한다:
+formula의 32바이트 clause-set digest를 싣는다. digest는
+점진적으로 fold된다: prelude의 순서 독립적 clause-fold를
+`--aot-bake` 시점에 bank에 미리 계산해 두므로, 매
+`(check-sat)` consult는 prelude 전체가 아니라 query 델타에
+비례한다. load된 trace는 (`--aot-load` prelude가 함께 활성화된
+경우) 매 `(check-sat)` 전에 consult되며, digest가 정확히
+일치하면 기록된 `unsat`이 solve를 short-circuit한다:
 
 ```bash
 # `.lutrace` emit (CDCL event + clause-set digest).

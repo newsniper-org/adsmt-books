@@ -122,10 +122,14 @@ misuse) and is mutually exclusive with `--aot-load` (exit
 
 The CLI additionally surfaces a `.lutrace` artefact for
 recorded CDCL traces. The emitted trace carries the recorded
-event stream plus a 32-byte canonical clause-set digest of the
-formula; a loaded trace is consulted at every `(check-sat)`
-(when an `--aot-load` prelude is also active), and on an exact
-digest match the recorded `unsat` short-circuits the solve:
+event stream plus a 32-byte clause-set digest of the formula.
+The digest is folded incrementally: the prelude's
+order-independent clause-fold is precomputed into the bank at
+`--aot-bake`, so the per-`(check-sat)` consult scales with the
+query delta, not the whole prelude. A loaded trace is consulted
+at every `(check-sat)` (when an `--aot-load` prelude is also
+active), and on an exact digest match the recorded `unsat`
+short-circuits the solve:
 
 ```bash
 # Emit a `.lutrace` (CDCL events + clause-set digest).
