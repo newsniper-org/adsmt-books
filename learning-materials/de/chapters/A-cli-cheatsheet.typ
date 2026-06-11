@@ -104,6 +104,22 @@ das vertrauenswürdige; eine abduzierte Hypothese muss der Aufrufer
 (als Vorbedingung / Invariante / Lemma) rechtfertigen, niemals
 stillschweigend annehmen.
 
+Standardmäßig garantiert die Engine nur, dass der Abdukt das Ziel
+_impliziert_ (`H ⊢ G`); eine mit den aktuellen Assertions
+inkonsistente Hypothese kann dennoch zurückgegeben werden (und
+würde das Ziel _vakuös_ verifizieren). Die volle cvc5-`(get-abduct)`-
+Semantik — die zusätzlich `H` konsistent mit den Assertions,
+`SAT(F ∧ H)`, verlangt — aktiviert man mit:
+
+```text
+(set-option :abduct-consistency true)
+```
+
+Dann markiert `(abduce …)` jeden JSON-Kandidaten mit einem
+`consistent`-Boolean (der Konsument filtert/dimmt die vakuösen),
+und `(get-abduct …)` / `(get-abduct-next)` verwerfen die
+inkonsistenten Abdukte ganz.
+
 == §3.1 AOT-Präludium-Bank
 
 Übersetzen Sie ein gewichtiges Präludium (das Präludium von

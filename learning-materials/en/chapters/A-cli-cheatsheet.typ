@@ -103,6 +103,22 @@ the trusted one; an abduced hypothesis is something the caller
 must justify (as a precondition / invariant / lemma), never
 silently assume.
 
+By default the engine only guarantees that the abduct _entails
+the goal_ (`H ⊢ G`); a hypothesis inconsistent with the current
+assertions can still be returned (and would verify the goal
+_vacuously_). Opt into the full cvc5 `(get-abduct)` semantics —
+also requiring `H` consistent with the assertions, `SAT(F ∧ H)`
+— with:
+
+```text
+(set-option :abduct-consistency true)
+```
+
+With it on, `(abduce …)` tags each JSON candidate with a
+`consistent` boolean (so a consumer can filter or dim the
+vacuous ones), and `(get-abduct …)` / `(get-abduct-next)` drop
+the inconsistent abducts outright.
+
 == §3.1 AOT prelude bank
 
 Pre-compile a heavyweight prelude (Verus's prelude is the

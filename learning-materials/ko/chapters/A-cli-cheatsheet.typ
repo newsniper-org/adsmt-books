@@ -101,6 +101,20 @@ abduct는 _권고_일 뿐이다 — 신뢰되는 verdict는 연역(`unsat`)이�
 abduce된 가설은 호출자가 (사전조건 / 불변식 / lemma로)
 정당화해야 하는 것이지 절대 조용히 가정하지 않는다.
 
+기본적으로 엔진은 abduct가 _목표를 함의_ (`H ⊢ G`)함만
+보장한다. 현재 assertion과 모순인 가설도 반환될 수 있고
+(그러면 목표를 _공허하게_ verify함). 완전한 cvc5
+`(get-abduct)` 시맨틱 — `H`가 assertion과 무모순,
+`SAT(F ∧ H)` 까지 요구 — 은 다음으로 opt-in:
+
+```text
+(set-option :abduct-consistency true)
+```
+
+켜면 `(abduce …)`는 각 JSON 후보에 `consistent` 불리언을
+붙이고 (소비자가 공허한 것을 필터/딤), `(get-abduct …)` /
+`(get-abduct-next)`는 inconsistent abduct를 아예 드롭한다.
+
 == §3.1 AOT prelude bank
 
 무거운 prelude (대표적 예: Verus의 prelude는 ~10⁵ 절)를

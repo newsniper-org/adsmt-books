@@ -102,6 +102,20 @@ abduct は _助言_ にすぎない — 信頼される verdict は演繹
 不変条件 / lemma として) 正当化すべきもので、決して暗黙には
 仮定しない。
 
+既定ではエンジンは abduct が _目標を含意_ (`H ⊢ G`) する
+ことのみ保証する。現在の表明と矛盾する仮説も返りうる
+(その場合は目標を _空虚に_ verify する)。完全な cvc5
+`(get-abduct)` セマンティクス — `H` が表明と無矛盾、
+`SAT(F ∧ H)` まで要求 — は次で opt-in:
+
+```text
+(set-option :abduct-consistency true)
+```
+
+有効にすると `(abduce …)` は各 JSON 候補に `consistent` 真偽
+値を付け (消費側が空虚なものを filter/dim)、`(get-abduct …)` /
+`(get-abduct-next)` は矛盾する abduct を丸ごと drop する。
+
 == §3.1 AOT prelude bank
 
 重量級の prelude (Verus の prelude が典型例で ~10⁵ 節)
