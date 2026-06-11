@@ -77,9 +77,9 @@ Werte. Die Signatur hat zwei Operationen:
 
 Zwei Axiome:
 
-- *Read-over-Write gleich.* $select(store(A, i, v), i) = v$.
-- *Read-over-Write verschieden.* $i ne j => select(store(A,
-  i, v), j) = select(A, j)$.
+- *Read-over-Write gleich.* $"select"("store"(A, i, v), i) = v$.
+- *Read-over-Write verschieden.* $i eq.not j => "select"("store"(A,
+  i, v), j) = "select"(A, j)$.
 
 ```text
 (declare-const A (Array Int Int))
@@ -107,11 +107,11 @@ wird. Indizierung mit arithmetischen Ausdrücken:
 ```
 
 Die store/select-Unstimmigkeit erfordert LIA, um
-$i ne j$ zu bestimmen (aus $i = j + 1$ ergibt sich
-durch LIA-Argumentation $i ne j$). Der Arrays-Solver
+$i eq.not j$ zu bestimmen (aus $i = j + 1$ ergibt sich
+durch LIA-Argumentation $i eq.not j$). Der Arrays-Solver
 ruft die Kombinationsschicht auf, um LIA zu fragen, ob
 $i = j$; LIA antwortet nein; Arrays schließt, dass sich
-das select auf $select(A, j) = 7$ reduziert.
+das select auf $"select"(A, j) = 7$ reduziert.
 
 Die polite-Kombination (Kapitel 3) erledigt das
 automatisch.
@@ -136,7 +136,7 @@ Jeder Datentyp hat:
 
 Zu den Axiomen gehören:
 
-- *Disjunktheit.* `nil` $ne$ `cons a t`.
+- *Disjunktheit.* `nil` $eq.not$ `cons a t`.
 - *Injektivität.* `cons a1 t1 = cons a2 t2 => a1 = a2
   and t1 = t2`.
 - *Azyklizität.* Kein Datenwert enthält sich selbst als
@@ -174,7 +174,7 @@ Jedes Atom wird an seine Theorie geleitet:
 
 Ein klassisches Verifikationspuzzle: beweise, dass das
 Speichern von $x$ am Index $i$ und anschließend von
-$y$ am Index $j$ — bei $i ne j$ — mit der Vertauschung
+$y$ am Index $j$ — bei $i eq.not j$ — mit der Vertauschung
 kommutiert.
 
 ```text
@@ -194,11 +194,11 @@ Arrays genau dann gleich sind, wenn sie an jedem Index
 übereinstimmen. Man betrachte also drei Indexklassen $k$:
 
 - $k = i$: linke Seite liefert $x$ (Store bei $i$, dann
-  Lesen am $j$-Store vorbei, da $i ne j$). Rechte Seite
+  Lesen am $j$-Store vorbei, da $i eq.not j$). Rechte Seite
   liefert $x$ (Store bei $i$ ganz oben). Gleich.
 - $k = j$: linke Seite liefert $y$. Rechte Seite liefert
   $y$. Gleich.
-- $k notin {i, j}$: linke Seite liefert $A[k]$. Rechte
+- $k in.not {i, j}$: linke Seite liefert $A[k]$. Rechte
   Seite liefert $A[k]$. Gleich.
 
 Also gilt überall linke Seite $=$ rechte Seite, im

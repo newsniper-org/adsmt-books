@@ -102,7 +102,7 @@ Drei Quellen, jeweils an der Engine-Grenze sichtbar gemacht
    Kandidatenhypothesen.
 
 2. *Theorie-Lücken.* Wenn ein Theorie-Solver "unknown" mit
-   einer konkreten Form zurückgibt ("ich müsste $i ne j$ wissen,
+   einer konkreten Form zurückgibt ("ich müsste $i eq.not j$ wissen,
    um dieses select/store zu entscheiden"), wird die Lücke zu
    einem Kandidaten.
 

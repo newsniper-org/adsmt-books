@@ -28,10 +28,10 @@ to a hand-coded specialised solver.
 not (p => r)$ to CNF by hand. Verify that the SAT
 solver returns `unsat`.
 
-*W2.2.* The *pigeonhole principle* PHP$_n$ says $n + 1$
-pigeons can't fit in $n$ holes. Write PHP$_3$ (4 pigeons,
+*W2.2.* The *pigeonhole principle* $"PHP"_n$ says $n + 1$
+pigeons can't fit in $n$ holes. Write $"PHP"_3$ (4 pigeons,
 3 holes) as a SAT instance and time the solver. How
-does it scale to PHP$_8$?
+does it scale to $"PHP"_8$?
 
 *C2.3.* The *Tseitin transformation* turns an arbitrary
 propositional formula into an equisatisfiable CNF

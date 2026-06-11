@@ -52,7 +52,7 @@ structure is *union-find* (disjoint-set forest):
 The congruence step kicks in when two terms have
 representatives that just got merged. Walk the parents
 of both classes — if any pair $(f(s_1, …, s_n), f(t_1,
-…, t_n))$ has the property that $find(s_i) = find(t_i)$
+…, t_n))$ has the property that $"find"(s_i) = "find"(t_i)$
 for all $i$, then by congruence those parents must also
 be in the same class. Merge them and repeat. The cascade
 eventually terminates because there are only finitely

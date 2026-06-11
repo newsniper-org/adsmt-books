@@ -29,10 +29,10 @@ spezialisierten Solver.
 not (p => r)$ von Hand in CNF um. Verifizieren Sie, dass der
 SAT-Solver `unsat` zurückgibt.
 
-*W2.2.* Das *Schubfachprinzip* PHP$_n$ besagt, dass $n + 1$
-Tauben nicht in $n$ Löcher passen. Schreiben Sie PHP$_3$ (4
+*W2.2.* Das *Schubfachprinzip* $"PHP"_n$ besagt, dass $n + 1$
+Tauben nicht in $n$ Löcher passen. Schreiben Sie $"PHP"_3$ (4
 Tauben, 3 Löcher) als SAT-Instanz und messen Sie die
-Laufzeit des Solvers. Wie skaliert es zu PHP$_8$?
+Laufzeit des Solvers. Wie skaliert es zu $"PHP"_8$?
 
 *C2.3.* Die *Tseitin-Transformation* verwandelt eine
 beliebige aussagenlogische Formel in eine äquisatisfizierbare

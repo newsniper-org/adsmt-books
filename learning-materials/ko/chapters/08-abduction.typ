@@ -100,7 +100,7 @@ example (n : Nat) : f n ≤ g n := by
    하위 체인은 후보 가설이 된다.
 
 2. *이론 간극.* 이론 솔버가 특정 형태로 "unknown"을
-   반환할 때 ("이 select/store를 결정하려면 $i ne j$ 를
+   반환할 때 ("이 select/store를 결정하려면 $i eq.not j$ 를
    알아야 한다"), 그 간극이 후보가 된다.
 
 3. *한정자 소진.* tier-1-2-3 인스턴스화 파이프라인이

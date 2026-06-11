@@ -55,7 +55,7 @@ Der Kongruenzschritt greift, wenn zwei Terme
 Repräsentanten haben, die gerade verschmolzen wurden.
 Man durchläuft die Eltern beider Klassen — wenn ein Paar
 $(f(s_1, …, s_n), f(t_1, …, t_n))$ die Eigenschaft hat,
-dass $find(s_i) = find(t_i)$ für alle $i$ gilt, dann
+dass $"find"(s_i) = "find"(t_i)$ für alle $i$ gilt, dann
 müssen kraft der Kongruenz diese Eltern ebenfalls in
 derselben Klasse liegen. Verschmelzen und wiederholen.
 Die Kaskade terminiert schließlich, weil es nur endlich

@@ -70,9 +70,9 @@ The signature has two operations:
 
 Two axioms:
 
-- *Read-over-write same.* $select(store(A, i, v), i) = v$.
-- *Read-over-write different.* $i ne j => select(store(A,
-  i, v), j) = select(A, j)$.
+- *Read-over-write same.* $"select"("store"(A, i, v), i) = v$.
+- *Read-over-write different.* $i eq.not j => "select"("store"(A,
+  i, v), j) = "select"(A, j)$.
 
 ```text
 (declare-const A (Array Int Int))
@@ -99,10 +99,10 @@ interesting. Indexing with arithmetic expressions:
 ```
 
 The store/select disagreement requires LIA to determine
-$i ne j$ (from $i = j + 1$, by LIA reasoning $i ne j$).
+$i eq.not j$ (from $i = j + 1$, by LIA reasoning $i eq.not j$).
 The Arrays solver invokes the combination layer to
 ask LIA whether $i = j$; LIA responds no; Arrays
-concludes the select reduces to $select(A, j) = 7$.
+concludes the select reduces to $"select"(A, j) = 7$.
 
 Polite combination (chapter 3) handles this automatically.
 
@@ -125,7 +125,7 @@ trees, option, records, sum types. Each datatype has:
 
 Axioms include:
 
-- *Disjointness.* `nil` $ne$ `cons a t`.
+- *Disjointness.* `nil` $eq.not$ `cons a t`.
 - *Injectivity.* `cons a1 t1 = cons a2 t2 => a1 = a2
   and t1 = t2`.
 - *Acyclicity.* No data value contains itself as a sub-
@@ -159,7 +159,7 @@ Each atom routes to its theory:
 == Worked example: aliased array writes
 
 A classic verification puzzle: prove that storing $x$
-at index $i$ then $y$ at index $j$, with $i ne j$,
+at index $i$ then $y$ at index $j$, with $i eq.not j$,
 commutes with the swap.
 
 ```text
@@ -179,10 +179,10 @@ equal iff they agree on every index. So consider three
 classes of index $k$:
 
 - $k = i$: lhs gives $x$ (store at $i$, then select past
-  the $j$-store since $i ne j$). rhs gives $x$ (store at
+  the $j$-store since $i eq.not j$). rhs gives $x$ (store at
   $i$ at the top). Equal.
 - $k = j$: lhs gives $y$. rhs gives $y$. Equal.
-- $k notin {i, j}$: lhs gives $A[k]$. rhs gives $A[k]$.
+- $k in.not {i, j}$: lhs gives $A[k]$. rhs gives $A[k]$.
   Equal.
 
 So lhs $=$ rhs everywhere, contradicting the assertion.

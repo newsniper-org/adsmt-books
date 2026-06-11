@@ -65,10 +65,10 @@ impl Theory for BvSolver {
 
 두 공리는 다음과 같다.
 
-- *같은 인덱스에 대한 read-over-write*. $select(store(A, i,
+- *같은 인덱스에 대한 read-over-write*. $"select"("store"(A, i,
   v), i) = v$.
-- *다른 인덱스에 대한 read-over-write*. $i ne j =>
-  select(store(A, i, v), j) = select(A, j)$.
+- *다른 인덱스에 대한 read-over-write*. $i eq.not j =>
+  "select"("store"(A, i, v), j) = "select"(A, j)$.
 
 ```text
 (declare-const A (Array Int Int))
@@ -94,11 +94,11 @@ impl Theory for BvSolver {
 (assert (= (select (store A i 5) j) 7))
 ```
 
-store/select의 불일치는 $i ne j$를 결정하기 위해 LIA를
-요구한다 ($i = j + 1$로부터 LIA 추론에 의해 $i ne j$).
+store/select의 불일치는 $i eq.not j$를 결정하기 위해 LIA를
+요구한다 ($i = j + 1$로부터 LIA 추론에 의해 $i eq.not j$).
 Arrays 솔버는 결합 계층을 통해 LIA에게 $i = j$ 여부를
 묻는다. LIA가 아니라고 응답하면, Arrays는 select가
-$select(A, j) = 7$로 환원된다고 결론짓는다.
+$"select"(A, j) = 7$로 환원된다고 결론짓는다.
 
 정중한 결합(3장)이 이를 자동으로 처리한다.
 
@@ -123,7 +123,7 @@ Datatypes 이론은 대수적 데이터 타입을 다룬다 — 리스트,
 
 공리에는 다음이 포함된다.
 
-- *서로소성(Disjointness)*. `nil` $ne$ `cons a t`.
+- *서로소성(Disjointness)*. `nil` $eq.not$ `cons a t`.
 - *단사성(Injectivity)*. `cons a1 t1 = cons a2 t2 => a1 = a2
   and t1 = t2`.
 - *비순환성(Acyclicity)*. 어떤 데이터 값도 자신을 부분
@@ -157,7 +157,7 @@ LIA까지 결합한다. adsmt의 정중한 결합은 임의의 부분집합을
 == 작성된 예제: 별칭화(aliased) 배열 쓰기
 
 고전적인 검증 퍼즐 — $i$에 $x$를 저장한 뒤 $j$에 $y$를
-저장하는 동작이, $i ne j$일 때, 그 순서를 바꾼 동작과
+저장하는 동작이, $i eq.not j$일 때, 그 순서를 바꾼 동작과
 일치함을 증명하라.
 
 ```text
@@ -176,11 +176,11 @@ Arrays 솔버의 추론: 외연성(extensionality)은 두 배열이
 모든 인덱스에서 일치하면 동일하다고 말한다. 따라서 인덱스
 $k$를 세 부류로 본다.
 
-- $k = i$: 좌변은 $x$를 준다 ($i$에 store한 뒤 $i ne j$이므로
+- $k = i$: 좌변은 $x$를 준다 ($i$에 store한 뒤 $i eq.not j$이므로
   $j$-store를 통과해서 select). 우변은 $x$를 준다 ($i$에
   대한 store가 맨 위이므로). 일치.
 - $k = j$: 좌변은 $y$. 우변은 $y$. 일치.
-- $k notin {i, j}$: 좌변은 $A[k]$. 우변은 $A[k]$. 일치.
+- $k in.not {i, j}$: 좌변은 $A[k]$. 우변은 $A[k]$. 일치.
 
 따라서 좌변 $=$ 우변이 모든 곳에서 성립하므로 주장이
 모순이다. 인증서는 세 사례를 세 개의 하위 증명으로

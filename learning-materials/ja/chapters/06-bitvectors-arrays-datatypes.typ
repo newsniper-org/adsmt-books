@@ -67,9 +67,9 @@ impl Theory for BvSolver {
 
 公理は二つ。
 
-- *Read-over-write (同一インデックス)*: $select(store(A, i, v), i) = v$。
-- *Read-over-write (異インデックス)*: $i ne j => select(store(A,
-  i, v), j) = select(A, j)$。
+- *Read-over-write (同一インデックス)*: $"select"("store"(A, i, v), i) = v$。
+- *Read-over-write (異インデックス)*: $i eq.not j => "select"("store"(A,
+  i, v), j) = "select"(A, j)$。
 
 ```text
 (declare-const A (Array Int Int))
@@ -95,11 +95,11 @@ Arrays と LIA の結合は興味深い現象を生む箇所である。
 (assert (= (select (store A i 5) j) 7))
 ```
 
-store と select の食い違いを判定するため、LIA が $i ne j$
+store と select の食い違いを判定するため、LIA が $i eq.not j$
 を決定する必要がある ($i = j + 1$ から、LIA の推論により
-$i ne j$)。Arrays ソルバは結合層を呼び出して LIA に
+$i eq.not j$)。Arrays ソルバは結合層を呼び出して LIA に
 $i = j$ かを問い、LIA は否と返し、Arrays は select が
-$select(A, j) = 7$ に簡約されると結論する。
+$"select"(A, j) = 7$ に簡約されると結論する。
 
 polite 結合 (第 3 章) がこれを自動的に処理する。
 
@@ -122,7 +122,7 @@ polite 結合 (第 3 章) がこれを自動的に処理する。
 
 公理には以下が含まれる。
 
-- *互いに排他*。`nil` $ne$ `cons a t`。
+- *互いに排他*。`nil` $eq.not$ `cons a t`。
 - *単射性 (injectivity)*。`cons a1 t1 = cons a2 t2 => a1 = a2
   and t1 = t2`。
 - *非循環性 (acyclicity)*。データ値が自身を部分項として
@@ -155,7 +155,7 @@ polite 結合 (第 3 章) がこれを自動的に処理する。
 == 演習例: 別名の付いた配列書き込み
 
 古典的な検証問題: インデックス $i$ に $x$ を、続いて
-インデックス $j$ に $y$ を、$i ne j$ の下で格納する操作が、
+インデックス $j$ に $y$ を、$i eq.not j$ の下で格納する操作が、
 入れ替えても可換であることを証明せよ。
 
 ```text
@@ -176,10 +176,10 @@ Arrays ソルバの推論: 拡張性 (extensionality) によれば、
 分けて考える。
 
 - $k = i$: 左辺は $x$ を与える ($i$ への store、続いて
-  $i ne j$ なので $j$ の store を通り抜けて select)。
+  $i eq.not j$ なので $j$ の store を通り抜けて select)。
   右辺も $x$ を与える (最上層で $i$ に store)。等しい。
 - $k = j$: 左辺は $y$ を与える。右辺も $y$ を与える。等しい。
-- $k notin {i, j}$: 左辺は $A[k]$ を与える。右辺も $A[k]$ を
+- $k in.not {i, j}$: 左辺は $A[k]$ を与える。右辺も $A[k]$ を
   与える。等しい。
 
 それゆえ左辺と右辺はいたるところで等しく、表明と矛盾する。

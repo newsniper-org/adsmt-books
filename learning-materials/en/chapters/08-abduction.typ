@@ -104,7 +104,7 @@ Three sources, each surfaced at the engine boundary
 
 2. *Theory gaps.* When a theory solver returns
    "unknown" with a specific shape ("I'd need to know
-   $i ne j$ to decide this select/store"), the gap
+   $i eq.not j$ to decide this select/store"), the gap
    becomes a candidate.
 
 3. *Quantifier exhaustion.* When the tier-1-2-3
