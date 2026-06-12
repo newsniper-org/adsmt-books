@@ -138,6 +138,14 @@ goals it is built for, and the theory search (a bounded
 subset search, one `check-sat` per candidate) is paid only
 when asked.
 
+Each per-candidate `check-sat` takes the *same complete
+solving path the top-level `(check-sat)` does* — including
+OxiZ delegation. So the theory search reasons over goals
+behind axiomatized functions (`Add`, `Poly`, … — the
+encoding real verifier obligations use, where the native
+engine is `unknown` but e-matching / MBQI discharges it), not
+just native arithmetic.
+
 == §3.1 AOT prelude bank
 
 Pre-compile a heavyweight prelude (Verus's prelude is the

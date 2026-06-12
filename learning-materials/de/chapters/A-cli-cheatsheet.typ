@@ -139,6 +139,14 @@ deklarativen Ziele, für die sie gedacht ist, und die
 Theoriesuche (eine beschränkte Teilmengensuche, ein `check-sat`
 pro Kandidat) wird nur auf Anfrage bezahlt.
 
+Jedes `check-sat` pro Kandidat nimmt *denselben vollständigen
+Lösungspfad wie das oberste `(check-sat)`* — einschließlich
+OxiZ-Delegation. Die Theoriesuche schließt daher auch über
+Ziele hinter axiomatisierten Funktionen (`Add`, `Poly` … — die
+Kodierung, die reale Verifizierer-Verpflichtungen verwenden, wo
+die native Engine `unknown` liefert, E-Matching / MBQI es aber
+entscheidet), nicht nur über native Arithmetik.
+
 == §3.1 AOT-Präludium-Bank
 
 Übersetzen Sie ein gewichtiges Präludium (das Präludium von

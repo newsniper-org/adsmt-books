@@ -131,6 +131,12 @@ opt-in이다: 기본 SLD 검색은 그것이 설계된 선언적 목표를 위�
 유지되고, 이론 검색(bounded 부분집합 검색, 후보당 `check-sat`
 1회)은 요청 시에만 비용을 치른다.
 
+후보당 `check-sat`은 최상위 `(check-sat)`과 *동일한 완전한
+풀이 경로* — OxiZ 위임 포함 — 를 탄다. 따라서 이론 검색은
+공리화된 함수(`Add`, `Poly` … — 실제 검증기 의무가 쓰는 인코딩으로,
+네이티브 엔진은 `unknown`이지만 e-matching / MBQI가 해소한다)
+뒤의 목표까지 추론한다. 네이티브 산술에 국한되지 않는다.
+
 == §3.1 AOT prelude bank
 
 무거운 prelude (대표적 예: Verus의 prelude는 ~10⁵ 절)를
