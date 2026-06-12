@@ -119,6 +119,25 @@ With it on, `(abduce …)` tags each JSON candidate with a
 vacuous ones), and `(get-abduct …)` / `(get-abduct-next)` drop
 the inconsistent abducts outright.
 
+By default the *search* is syntactic (SLD / α-match + Horn
+rules): it returns a candidate only when the goal is itself a
+declared abducible (or Horn-resolves to one). For theory goals
+(`x>0 ∧ y>0 ⊢ x+y>0`, `x>0 ⊢ x≥1`) — i.e. essentially every
+arithmetic / SMT obligation — that finds nothing. Turn on the
+theory-aware search, which finds a minimal conjunction of
+declared abducibles `H` with `F ∧ H ⊨ G` under the theory
+(it also enforces `SAT(F ∧ H)`, so on its own it is the full
+cvc5 `(get-abduct)` contract):
+
+```text
+(set-option :abduct-theory true)
+```
+
+It is opt-in: the default SLD search stays for the declarative
+goals it is built for, and the theory search (a bounded
+subset search, one `check-sat` per candidate) is paid only
+when asked.
+
 == §3.1 AOT prelude bank
 
 Pre-compile a heavyweight prelude (Verus's prelude is the

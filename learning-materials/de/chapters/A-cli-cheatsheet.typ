@@ -120,6 +120,25 @@ Dann markiert `(abduce …)` jeden JSON-Kandidaten mit einem
 und `(get-abduct …)` / `(get-abduct-next)` verwerfen die
 inkonsistenten Abdukte ganz.
 
+Standardmäßig ist die *Suche* syntaktisch (SLD / α-Match +
+Horn-Regeln): sie liefert nur dann einen Kandidaten, wenn das
+Ziel selbst ein deklariertes Abduzibel ist (oder Horn-auflöst).
+Für Theorieziele (`x>0 ∧ y>0 ⊢ x+y>0`, `x>0 ⊢ x≥1`) — also
+praktisch jede arithmetische / SMT-Verpflichtung — findet das
+nichts. Aktiviere die theoriebewusste Suche, die eine minimale
+Konjunktion deklarierter Abduzibler `H` mit `F ∧ H ⊨ G` unter
+der Theorie findet (sie erzwingt auch `SAT(F ∧ H)`, ist also
+für sich genommen der volle cvc5-`(get-abduct)`-Vertrag):
+
+```text
+(set-option :abduct-theory true)
+```
+
+Sie ist opt-in: die Standard-SLD-Suche bleibt für die
+deklarativen Ziele, für die sie gedacht ist, und die
+Theoriesuche (eine beschränkte Teilmengensuche, ein `check-sat`
+pro Kandidat) wird nur auf Anfrage bezahlt.
+
 == §3.1 AOT-Präludium-Bank
 
 Übersetzen Sie ein gewichtiges Präludium (das Präludium von

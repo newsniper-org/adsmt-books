@@ -115,6 +115,22 @@ abduce된 가설은 호출자가 (사전조건 / 불변식 / lemma로)
 붙이고 (소비자가 공허한 것을 필터/딤), `(get-abduct …)` /
 `(get-abduct-next)`는 inconsistent abduct를 아예 드롭한다.
 
+기본 *검색*은 구문적(SLD / α-match + Horn 규칙)이다 — 목표가
+선언된 abducible 자신일 때(또는 Horn 해소될 때)만 후보를
+낸다. 이론 목표(`x>0 ∧ y>0 ⊢ x+y>0`, `x>0 ⊢ x≥1`) — 즉 사실상
+모든 산술 / SMT 의무 — 에는 아무것도 못 찾는다. 이론-aware
+검색을 켜면, 선언된 abducible들의 최소 결합 `H` 중 이론 하에서
+`F ∧ H ⊨ G`인 것을 찾는다 (`SAT(F ∧ H)`도 강제하므로 단독으로
+완전한 cvc5 `(get-abduct)` 계약):
+
+```text
+(set-option :abduct-theory true)
+```
+
+opt-in이다: 기본 SLD 검색은 그것이 설계된 선언적 목표를 위해
+유지되고, 이론 검색(bounded 부분집합 검색, 후보당 `check-sat`
+1회)은 요청 시에만 비용을 치른다.
+
 == §3.1 AOT prelude bank
 
 무거운 prelude (대표적 예: Verus의 prelude는 ~10⁵ 절)를

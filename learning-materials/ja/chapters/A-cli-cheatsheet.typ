@@ -116,6 +116,23 @@ abduct は _助言_ にすぎない — 信頼される verdict は演繹
 値を付け (消費側が空虚なものを filter/dim)、`(get-abduct …)` /
 `(get-abduct-next)` は矛盾する abduct を丸ごと drop する。
 
+既定の*検索*は構文的 (SLD / α-match + Horn 規則) である —
+目標が宣言済み abducible そのもの (または Horn で解決) のとき
+のみ候補を返す。理論的な目標 (`x>0 ∧ y>0 ⊢ x+y>0`、
+`x>0 ⊢ x≥1`) — つまり事実上すべての算術 / SMT 義務 — では何も
+見つからない。理論認識の検索を有効にすると、宣言済み
+abducible の最小の連言 `H` であって理論の下で `F ∧ H ⊨ G` と
+なるものを見つける (`SAT(F ∧ H)` も強制するので、単独で完全な
+cvc5 `(get-abduct)` 契約):
+
+```text
+(set-option :abduct-theory true)
+```
+
+opt-in である: 既定の SLD 検索はそれが想定する宣言的目標の
+ために残り、理論検索 (有界な部分集合検索、候補ごとに
+`check-sat` 1回) は要求されたときのみコストを払う。
+
 == §3.1 AOT prelude bank
 
 重量級の prelude (Verus の prelude が典型例で ~10⁵ 節)
