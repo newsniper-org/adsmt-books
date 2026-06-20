@@ -175,6 +175,24 @@ The e-graph integration buys completeness: if congruence-
 closing the e-graph would produce a trigger match that
 the flat universe missed, the e-graph catches it.
 
+In adsmt, the vendored OxiZ backend makes this
+congruence-aware matching its _default_, realized as one
+unified core called _CCFV_ — congruence closure with free
+variables, after Barbosa–Fontaine–Reynolds' E-ground
+(dis)unification. A trigger is matched _modulo_ the ground
+congruence: a pattern $f(g(x))$ fires against a ground term
+$f(c)$ whenever $c$ and $g(a)$ are congruent, precisely the
+match a syntactic walk over the flat universe drops. For a
+model-completion engine — one that may answer `sat` by
+building a model — this is not only a completeness gain but
+a _soundness_ requirement: missing such a congruence match
+lets the engine certify a congruence-blind model as `sat`
+on a problem that is in fact `unsat`. The same CCFV core
+also expresses conflict-driven instantiation and the
+model-completion search, differing only in the constraint
+it solves and whether it reads the real congruence or a
+default-extended total view.
+
 == Quantifier instantiation in the engine loop
 
 The engine's `check_sat` loop runs quantifier instantiation

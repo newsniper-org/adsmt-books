@@ -184,6 +184,29 @@ wenn das Kongruenz-Schließen im E-Graphen einen
 Trigger-Treffer erzeugen würde, den das flache Universum
 verfehlt, fängt der E-Graph ihn ein.
 
+In adsmt macht das mitgelieferte OxiZ-Backend dieses
+kongruenzbewusste Matching zu seinem _Standard_,
+verwirklicht als ein einziger vereinheitlichter Kern
+namens _CCFV_ — Kongruenzhülle mit freien Variablen, nach
+der E-Grund-(Dis-)Unifikation von
+Barbosa–Fontaine–Reynolds. Ein Trigger wird _modulo_ der
+Grund-Kongruenz gematcht: ein Muster $f(g(x))$ feuert
+gegen einen Grundterm $f(c)$, sobald $c$ und $g(a)$
+kongruent sind — genau der Treffer, den ein syntaktischer
+Durchlauf über das flache Universum fallen lässt. Für eine
+Modellvervollständigungs-Engine — eine, die `sat`
+beantworten kann, indem sie ein Modell baut — ist dies
+nicht nur ein Vollständigkeitsgewinn, sondern eine
+_Korrektheits_-Anforderung: verfehlt man einen solchen
+Kongruenz-Treffer, so darf die Engine ein kongruenzblindes
+Modell bei einem Problem, das tatsächlich `unsat` ist, als
+`sat` zertifizieren. Derselbe CCFV-Kern drückt auch die
+konfliktgetriebene Instanziierung und die
+Modellvervollständigungs-Suche aus und unterscheidet sich
+nur in der Bedingung, die er löst, und darin, ob er die
+echte Kongruenz oder eine standard-erweiterte Totalsicht
+liest.
+
 == Quantor-Instanziierung in der Engine-Schleife
 
 Die Schleife `check_sat` der Engine führt die
