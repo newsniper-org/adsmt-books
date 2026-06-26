@@ -85,4 +85,5 @@
 #include "chapters/A-smtlib-surface.typ"
 #include "chapters/B-lukb-surface.typ"
 #include "chapters/C-cert-ast-ref.typ"
+#include "chapters/D-typed-asp-surface.typ"
 #include "chapters/99-bibliography.typ"
