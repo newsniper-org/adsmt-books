@@ -1,8 +1,8 @@
 = LSP Cheatsheet
 
-`adsmt-lsp` is a tower-lsp-based LSP server for SMT-LIB
-and lu-kb files. This appendix documents the six
-capabilities and how to drive them.
+`adsmt-lsp` is a tower-lsp-based LSP server for SMT-LIB,
+lu-kb, and typed-ASP files. This appendix documents the
+six capabilities and how to drive them.
 
 == Installation
 
@@ -23,14 +23,14 @@ Most LSP clients need three things:
 
 1. The LSP binary's location.
 2. The file extensions it should activate for
-   (`*.smt2` + `*.kb`).
+   (`*.smt2` + `*.kb` + `*.asp` / `*.lp`).
 3. (optional) initialization options.
 
 ```jsonc
 // VS Code settings.json
 {
   "adsmt.serverPath": "/path/to/adsmt-lsp",
-  "adsmt.activateOn": ["smt2", "kb"]
+  "adsmt.activateOn": ["smt2", "kb", "asp", "lp"]
 }
 ```
 
@@ -39,7 +39,7 @@ For neovim with nvim-lspconfig:
 ```lua
 require'lspconfig'.adsmt.setup{
   cmd = { '/path/to/adsmt-lsp' },
-  filetypes = { 'smt2', 'kb' },
+  filetypes = { 'smt2', 'kb', 'asp', 'lp' },
 }
 ```
 
@@ -70,6 +70,30 @@ categories surface:
 
 Diagnostics are positioned to the offending source range
 so editors can navigate to them.
+
+For typed-ASP documents (`*.asp` / `*.lp`, language id
+`asp`) the server runs the *advisory linter*
+(`adsmt_ir_asp::lint_source`) instead of the SMT-LIB
+parser. It is a pure observer behind the soundness
+firewall — it never changes a verdict — so every finding
+is `Information`-level and tagged `adsmt-asp`:
+
+#table(
+  columns: 2,
+  align: left,
+  stroke: 0.5pt + gray,
+  table.header([*Rule (`code`)*], [*What it flags*]),
+  [`asp-unsafe`],        [A variable not bound by a positive body atom (grounding would drop instances). Squiggled at the offending rule.],
+  [`asp-nonstratified`], [A negative cycle — the program is decided by stable-model semantics, not the perfect model.],
+  [`asp-vacuity`],       [No answer set — an integrity constraint or odd negative loop eliminated every candidate (the dual of the SMT-LIB vacuous-context lint).],
+)
+
+The per-item `asp-unsafe` note carries a precise source
+location; the whole-program `asp-nonstratified` /
+`asp-vacuity` notes anchor at the file head and list in
+the Problems panel. The ASP path is compiled in by the
+default-on `asp` build feature (`--no-default-features`
+builds the SMT-LIB-only server).
 
 == Capability 2: `textDocument/definition`
 

@@ -1,8 +1,8 @@
 = LSP チートシート
 
-`adsmt-lsp` は SMT-LIB および lu-kb ファイル向けの
-tower-lsp ベースの LSP サーバである。この付録は六つの
-ケイパビリティとその駆動方法を文書化する。
+`adsmt-lsp` は SMT-LIB、lu-kb および typed-ASP ファイル
+向けの tower-lsp ベースの LSP サーバである。この付録は
+六つのケイパビリティとその駆動方法を文書化する。
 
 == インストール
 
@@ -22,14 +22,14 @@ VS Code については、`tooling/vscode-extension/` 配下の
 ほとんどの LSP クライアントは三つを必要とする。
 
 1. LSP バイナリの場所。
-2. それを起動すべきファイル拡張子(`*.smt2` + `*.kb`)。
+2. それを起動すべきファイル拡張子(`*.smt2` + `*.kb` + `*.asp` / `*.lp`)。
 3. (任意)初期化オプション。
 
 ```jsonc
 // VS Code settings.json
 {
   "adsmt.serverPath": "/path/to/adsmt-lsp",
-  "adsmt.activateOn": ["smt2", "kb"]
+  "adsmt.activateOn": ["smt2", "kb", "asp", "lp"]
 }
 ```
 
@@ -38,7 +38,7 @@ neovim と nvim-lspconfig を使う場合は次のとおり。
 ```lua
 require'lspconfig'.adsmt.setup{
   cmd = { '/path/to/adsmt-lsp' },
-  filetypes = { 'smt2', 'kb' },
+  filetypes = { 'smt2', 'kb', 'asp', 'lp' },
 }
 ```
 
@@ -69,6 +69,29 @@ command = "/path/to/adsmt-lsp"
 
 診断は問題のソース範囲に位置付けられるので、エディタは
 そこへ移動できる。
+
+typed-ASP ドキュメント(`*.asp` / `*.lp`、言語 id `asp`)に
+ついては、サーバは SMT-LIB パーサの代わりに*アドバイザリ・
+リンタ*(`adsmt_ir_asp::lint_source`)を実行する。これは健全性
+ファイアウォールの背後の純粋なオブザーバであり — 判定を決して
+変更しない — ため、すべての検出は `Information` レベルで
+`adsmt-asp` とタグ付けされる。
+
+#table(
+  columns: 2,
+  align: left,
+  stroke: 0.5pt + gray,
+  table.header([*規則 (`code`)*], [*何を示すか*]),
+  [`asp-unsafe`],        [正の本体アトムで束縛されない変数(グラウンディングがインスタンスを脱落させる)。違反規則の位置に波線が引かれる。],
+  [`asp-nonstratified`], [負のサイクル — プログラムが完全モデルではなく安定モデル意味論で判定される。],
+  [`asp-vacuity`],       [解集合なし — 整合性制約または奇妙な負ループがすべての候補を排除した(SMT-LIB の空虚-文脈リントの双対)。],
+)
+
+項目ごとの `asp-unsafe` ノートは精密なソース位置を持ち、
+全体の `asp-nonstratified` / `asp-vacuity` ノートはファイル
+先頭に固定され Problems パネルに列挙される。ASP 経路は
+デフォルト-on の `asp` ビルド機能でコンパイルされる
+(`--no-default-features` は SMT-LIB 専用サーバをビルドする)。
 
 == ケイパビリティ 2: `textDocument/definition`
 

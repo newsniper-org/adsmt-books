@@ -1,8 +1,8 @@
 = LSP 치트시트
 
-`adsmt-lsp` 는 SMT-LIB 및 lu-kb 파일을 위한 tower-lsp
-기반 LSP 서버이다. 이 부록은 여섯 가지 기능과 이를
-구동하는 방법을 문서화한다.
+`adsmt-lsp` 는 SMT-LIB, lu-kb 및 typed-ASP 파일을 위한
+tower-lsp 기반 LSP 서버이다. 이 부록은 여섯 가지 기능과
+이를 구동하는 방법을 문서화한다.
 
 == 설치
 
@@ -22,14 +22,14 @@ VS Code의 경우, `tooling/vscode-extension/` 아래의 번들된
 대부분의 LSP 클라이언트는 세 가지를 필요로 한다.
 
 1. LSP 바이너리의 위치.
-2. 활성화해야 할 파일 확장자 (`*.smt2` + `*.kb`).
+2. 활성화해야 할 파일 확장자 (`*.smt2` + `*.kb` + `*.asp` / `*.lp`).
 3. (선택) 초기화 옵션.
 
 ```jsonc
 // VS Code settings.json
 {
   "adsmt.serverPath": "/path/to/adsmt-lsp",
-  "adsmt.activateOn": ["smt2", "kb"]
+  "adsmt.activateOn": ["smt2", "kb", "asp", "lp"]
 }
 ```
 
@@ -38,7 +38,7 @@ nvim-lspconfig 를 사용하는 neovim 의 경우:
 ```lua
 require'lspconfig'.adsmt.setup{
   cmd = { '/path/to/adsmt-lsp' },
-  filetypes = { 'smt2', 'kb' },
+  filetypes = { 'smt2', 'kb', 'asp', 'lp' },
 }
 ```
 
@@ -69,6 +69,27 @@ command = "/path/to/adsmt-lsp"
 
 진단은 위반 소스 범위에 위치하므로 에디터가 그곳으로
 탐색할 수 있다.
+
+typed-ASP 문서(`*.asp` / `*.lp`, 언어 id `asp`)의 경우 서버는
+SMT-LIB 파서 대신 *어드바이저리 린터*
+(`adsmt_ir_asp::lint_source`)를 실행한다. 이는 건전성 방화벽
+뒤의 순수 관찰자로서 — 결코 판정을 바꾸지 않으므로 — 모든
+발견은 `Information` 수준이며 `adsmt-asp` 로 태그된다.
+
+#table(
+  columns: 2,
+  align: left,
+  stroke: 0.5pt + gray,
+  table.header([*규칙 (`code`)*], [*무엇을 표시하는가*]),
+  [`asp-unsafe`],        [양성 본문 원자에 의해 속박되지 않은 변수(그라운딩이 인스턴스를 누락시킨다). 위반 규칙 위치에 물결선이 표시된다.],
+  [`asp-nonstratified`], [음성 사이클 — 프로그램이 완전 모델이 아니라 안정 모델 의미론으로 판정된다.],
+  [`asp-vacuity`],       [정답 집합 없음 — 무결성 제약이나 기묘한 음성 루프가 모든 후보를 제거했다(SMT-LIB 공허-문맥 린트의 쌍대).],
+)
+
+항목별 `asp-unsafe` 노트는 정밀한 소스 위치를 담고, 전역
+`asp-nonstratified` / `asp-vacuity` 노트는 파일 머리에 고정되어
+Problems 패널에 나열된다. ASP 경로는 기본-on `asp` 빌드 기능으로
+컴파일된다(`--no-default-features` 는 SMT-LIB 전용 서버를 빌드한다).
 
 == 기능 2: `textDocument/definition`
 

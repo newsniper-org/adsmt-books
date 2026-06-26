@@ -1,8 +1,8 @@
 = LSP-Cheatsheet
 
 `adsmt-lsp` ist ein auf tower-lsp basierender LSP-Server für
-SMT-LIB- und lu-kb-Dateien. Dieser Anhang dokumentiert die
-sechs Fähigkeiten und wie man sie ansteuert.
+SMT-LIB-, lu-kb- und typed-ASP-Dateien. Dieser Anhang
+dokumentiert die sechs Fähigkeiten und wie man sie ansteuert.
 
 == Installation
 
@@ -23,14 +23,14 @@ Die meisten LSP-Clients benötigen drei Dinge:
 
 1. Den Pfad der LSP-Binärdatei.
 2. Die Dateierweiterungen, für die sie aktiviert werden soll
-   (`*.smt2` + `*.kb`).
+   (`*.smt2` + `*.kb` + `*.asp` / `*.lp`).
 3. (optional) Initialisierungsoptionen.
 
 ```jsonc
 // VS Code settings.json
 {
   "adsmt.serverPath": "/path/to/adsmt-lsp",
-  "adsmt.activateOn": ["smt2", "kb"]
+  "adsmt.activateOn": ["smt2", "kb", "asp", "lp"]
 }
 ```
 
@@ -39,7 +39,7 @@ Für neovim mit nvim-lspconfig:
 ```lua
 require'lspconfig'.adsmt.setup{
   cmd = { '/path/to/adsmt-lsp' },
-  filetypes = { 'smt2', 'kb' },
+  filetypes = { 'smt2', 'kb', 'asp', 'lp' },
 }
 ```
 
@@ -70,6 +70,30 @@ Kategorien treten zutage:
 
 Die Diagnosen sind auf den verursachenden Quellbereich
 positioniert, sodass Editoren zu ihnen navigieren können.
+
+Für typed-ASP-Dokumente (`*.asp` / `*.lp`, Sprach-id `asp`)
+führt der Server statt des SMT-LIB-Parsers den *beratenden
+Linter* (`adsmt_ir_asp::lint_source`) aus. Er ist ein reiner
+Beobachter hinter der Korrektheits-Firewall — er ändert
+niemals ein Verdikt — daher ist jeder Befund auf der Stufe
+`Information` und mit `adsmt-asp` markiert:
+
+#table(
+  columns: 2,
+  align: left,
+  stroke: 0.5pt + gray,
+  table.header([*Regel (`code`)*], [*Was sie kennzeichnet*]),
+  [`asp-unsafe`],        [Eine nicht durch ein positives Rumpfatom gebundene Variable (die Grundierung würde Instanzen verlieren). An der verletzenden Regel unterschlängelt.],
+  [`asp-nonstratified`], [Ein negativer Zyklus — das Programm wird durch die Stabilmodell-Semantik entschieden, nicht durch das perfekte Modell.],
+  [`asp-vacuity`],       [Keine Antwortmenge — eine Integritätsbedingung oder eine seltsame negative Schleife hat jeden Kandidaten eliminiert (das Dual des SMT-LIB-Lints für vakuierten Kontext).],
+)
+
+Der pro-Element-Befund `asp-unsafe` trägt eine präzise
+Quellposition; die programmweiten Befunde
+`asp-nonstratified` und `asp-vacuity` verankern am Dateikopf
+und erscheinen im Problems-Panel. Der ASP-Pfad wird durch das standardmäßig
+aktive Build-Feature `asp` einkompiliert (`--no-default-features`
+baut den reinen SMT-LIB-Server).
 
 == Fähigkeit 2: `textDocument/definition`
 
