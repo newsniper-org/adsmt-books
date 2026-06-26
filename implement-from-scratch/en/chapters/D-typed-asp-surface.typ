@@ -49,8 +49,8 @@ strict-positivity gate re-checks recursion. Constructor
 terms double as first-order *patterns* (see below).
 
 *`pred <name>(S0, S1, …).`* — A typed relation
-(result `Prop`). Argument sorts are declared sorts / enums
-/ datatypes or the built-in `Int`.
+(result `Prop`). Argument sorts are declared sorts,
+enums, datatypes, or the built-in `Int`.
 
 *`abducible <name>(S, …).`* — Declares a predicate
 *abducible*: its ground atoms form the hypothesis space.
@@ -86,7 +86,7 @@ parses-but-abstains above it — never approximates).
   [L0], [typed sorts/preds, facts, definite rules, first-order datatype matching], [landed],
   [L1], [theory interior (`open` Int atoms) + CanEq typed (dis)equality], [landed],
   [L2], [stratified `not` + integrity constraints `:- B`], [landed],
-  [L3], [full stable models + loop-formula certificate], [planned (hard-gated)],
+  [L3], [stable models (non-stratified `not`) — bounded GL reduct gate; full unfounded-set + loop-formula solver later], [first slice landed],
   [L4], [choice `{…}` / disjunctive heads], [planned],
   [L5], [aggregates + weak constraints / optimization], [planned],
   [L6], [first-class abduction], [merged into the rule IR],
@@ -111,15 +111,44 @@ evaluates as the gate's `θ`.
 `not p(X)` holds in the *perfect model* iff `p(X)` is not
 derivable. It is sound only under **stratification**: no
 predicate may depend on its own negation. The elaborator
-builds the dependency graph and rejects a negative cycle
-(`FaceError::NonStratified`); the solver then evaluates
-strata bottom-up, so every `not` reads an already-decided
-lower stratum. Every variable under `not` must also be
-bound by a positive body atom (a free one would be a
-universal, not a closed-world negation).
+builds the dependency graph and *classifies* the program;
+a stratified one is solved by the perfect model, evaluating
+strata bottom-up so every `not` reads an already-decided
+lower stratum. A *negative cycle* no longer fails
+elaboration — it routes to the L3 stable-model gate below.
+Every variable under `not` must also be bound by a positive
+body atom (a free one would be a universal, not a
+closed-world negation).
 
 ```text
 single(X) :- person(X), not married(X).
+```
+
+== Stable models (L3, first slice)
+
+When a program *is* non-stratified — a predicate depends on
+its own negation, as in the even loop `p :- not q. q :- not
+p.` — there is no single perfect model but a set of *stable
+models* (answer sets). The first L3 slice decides them by
+the **Gelfond–Lifschitz reduct gate**, reusing the trusted
+least-fixpoint verbatim: a set `M` is a stable model iff the
+least model of the *reduct* `P^M` (drop every rule with a
+`not q`, `q ∈ M`; delete the surviving `not` literals)
+equals `M`. The candidate enumerator is untrusted — a bug
+can only propose a non-stable `M` (rejected, since
+certifying *is* recomputing) or miss one (a sound
+under-report), never certify a wrong model. The search is
+bounded: it brackets candidates by `L ⊆ M ⊆ U` and abstains
+*loudly* past a work budget (the full unfounded-set +
+loop-formula solver is a later slice), so a large instance
+yields a `FaceError`, never a hang. Queries over multiple
+models are answered *cautiously* (true in every stable
+model); `Solution.stable` carries the answer sets.
+
+```text
+d(x).                     % even loop over d(x):
+p(X) :- d(X), not q(X).   %   two answer sets,
+q(X) :- d(X), not p(X).   %   {d(x),p(x)} and {d(x),q(x)}
 ```
 
 == Abduction — the rule's dual
@@ -155,10 +184,13 @@ gate certify the closed-world model. The two never share a
 judgement. A buggy grounder or heuristic can only *shrink*
 the answer set or yield `Unknown` — never manufacture a
 false entailment. The abstain boundary is wide and
-deliberate: a non-stratified program, an unsafe rule (an
-unbound variable), an infinite domain, or any "no answer
-set" claim without a certificate is a `FaceError` or
-`Unknown`, never an approximation.
+deliberate: an unsafe rule (an unbound variable), an
+infinite domain, or a stable-model search past the work
+budget is a `FaceError` or `Unknown`, never an
+approximation. A non-stratified program is no longer
+refused — it routes to the L3 gate, whose "no answer set"
+verdict is sound *within* that bound (the bracketed sweep is
+exhaustive and re-checkable).
 
 == Comparison to lu-kb and SMT-LIB
 
@@ -169,7 +201,7 @@ set" claim without a certificate is a `FaceError` or
   table.header([*Concern*], [*SMT-LIB*], [*lu-kb*], [*typed-ASP*]),
   [World],     [open], [open], [closed (least model)],
   [Question],  [SAT of a goal], [SAT of a KB], [the unique model],
-  [Negation],  [classical], [classical], [stratified NAF],
+  [Negation],  [classical], [classical], [stratified + stable NAF],
   [Abduction], [`(abduce)`], [via `rule`], [native (rule dual)],
   [Theory],    [native], [native], [`{…}` interior, same engine],
 )

@@ -94,7 +94,7 @@ abstiniert — nie approximiert).
   [L0], [typisierte sorts/Prädikate, Fakten, definite Regeln, erststufiges data-Matching], [umgesetzt],
   [L1], [Theorie-Inneres (`open` Int-Atome) + CanEq typisierte (Un-)Gleichheit], [umgesetzt],
   [L2], [stratifiziertes `not` + Integritätsbedingungen `:- B`], [umgesetzt],
-  [L3], [volle stabile Modelle + Loop-Formel-Zertifikat], [geplant (hart-gegattert)],
+  [L3], [stabile Modelle (nicht-stratifiziertes `not`) — beschränktes GL-Reduct-Gatter; voller Unfounded-Set- + Loop-Formel-Solver später], [erste Scheibe umgesetzt],
   [L4], [Auswahl `{…}` / disjunktive Köpfe], [geplant],
   [L5], [Aggregate + weiche Bedingungen / Optimierung], [geplant],
   [L6], [erstklassige Abduktion], [in die Regel-IR verschmolzen],
@@ -122,16 +122,50 @@ auswertet.
 `p(X)` nicht herleitbar ist. Es ist nur unter
 **Stratifikation** korrekt: kein Prädikat darf von seiner
 eigenen Negation abhängen. Der Elaborator baut den
-Abhängigkeitsgraphen und weist einen negativen Zyklus
-zurück (`FaceError::NonStratified`); der Solver wertet die
-Schichten von unten nach oben aus, sodass jedes `not` eine
-bereits entschiedene untere Schicht liest. Jede Variable
-unter `not` muss auch durch ein positives Rumpfatom
-gebunden sein (eine freie wäre eine Allquantifizierung,
-keine Closed-World-Negation).
+Abhängigkeitsgraphen und *klassifiziert* das Programm; ein
+stratifiziertes wird über das perfekte Modell gelöst, wobei
+die Schichten von unten nach oben ausgewertet werden, sodass
+jedes `not` eine bereits entschiedene untere Schicht liest.
+Ein *negativer Zyklus* lässt die Elaboration nicht mehr
+fehlschlagen — er wird zum L3-Stabile-Modelle-Gatter unten
+geleitet. Jede Variable unter `not` muss auch durch ein
+positives Rumpfatom gebunden sein (eine freie wäre eine
+Allquantifizierung, keine Closed-World-Negation).
 
 ```text
 single(X) :- person(X), not married(X).
+```
+
+== Stabile Modelle (L3, erste Scheibe)
+
+Wenn ein Programm *nicht-stratifiziert* ist — ein Prädikat
+hängt von seiner eigenen Negation ab, wie im geraden Zyklus
+`p :- not q. q :- not p.` — gibt es kein einzelnes perfektes
+Modell, sondern eine Menge *stabiler Modelle* (Antwortmengen).
+Die erste L3-Scheibe entscheidet sie über das
+**Gelfond–Lifschitz-Reduct-Gatter** und verwendet den
+vertrauten Kleinsten-Fixpunkt unverändert wieder: eine Menge
+`M` ist genau dann ein stabiles Modell, wenn das kleinste
+Modell des *Reducts* `P^M` (jede Regel mit einem `not q`,
+`q ∈ M` verwerfen; bei den überlebenden Regeln die
+`not`-Literale streichen) gleich `M` ist. Der Kandidaten-
+Aufzähler ist nicht vertraut — ein Fehler kann nur ein
+nicht-stabiles `M` vorschlagen (zurückgewiesen, da das
+Zertifizieren *die* Neuberechnung ist) oder eines übersehen
+(eine korrekte Untermeldung), nie ein falsches Modell
+zertifizieren. Die Suche ist beschränkt: sie umrahmt die
+Kandidaten durch `L ⊆ M ⊆ U` und abstiniert *laut* jenseits
+eines Arbeitsbudgets (der volle Unfounded-Set- +
+Loop-Formel-Solver ist eine spätere Scheibe), sodass eine
+große Instanz einen `FaceError` ergibt, nie ein Hängen.
+Anfragen über mehrere Modelle werden *vorsichtig* (cautious,
+in jedem stabilen Modell wahr) beantwortet; `Solution.stable`
+trägt die Antwortmengen.
+
+```text
+d(x).                     % gerader Zyklus über d(x):
+p(X) :- d(X), not q(X).   %   zwei Antwortmengen,
+q(X) :- d(X), not p(X).   %   {d(x),p(x)} und {d(x),q(x)}
 ```
 
 == Abduktion — das Dual der Regel
@@ -170,11 +204,15 @@ Closed-World-Modell. Beide teilen nie ein Urteil. Ein
 fehlerhafter Grounder oder eine Heuristik kann die
 Antwortmenge nur *verkleinern* oder `Unknown` liefern —
 nie eine falsche Folgerung erzeugen. Die Abstinenzgrenze
-ist breit und bewusst: ein nicht stratifiziertes Programm,
-eine unsichere Regel (eine ungebundene Variable), eine
-unendliche Domäne oder jede „keine Antwortmenge“-Behauptung
-ohne Zertifikat ist ein `FaceError` oder `Unknown`, nie
-eine Approximation.
+ist breit und bewusst: eine unsichere Regel (eine
+ungebundene Variable), eine unendliche Domäne oder eine
+Stabile-Modelle-Suche jenseits des Arbeitsbudgets ist ein
+`FaceError` oder `Unknown`, nie eine Approximation. Ein
+nicht-stratifiziertes Programm wird nicht mehr abgelehnt —
+es wird zum L3-Gatter geleitet, dessen
+„keine Antwortmenge“-Urteil *innerhalb* dieser Schranke
+korrekt ist (die beschränkte Suche ist vollständig und
+nachrechenbar).
 
 == Vergleich zu lu-kb und SMT-LIB
 
@@ -185,7 +223,7 @@ eine Approximation.
   table.header([*Aspekt*], [*SMT-LIB*], [*lu-kb*], [*typed-ASP*]),
   [Welt],      [offen], [offen], [geschlossen (Least Model)],
   [Frage],     [SAT eines Ziels], [SAT einer WB], [das eindeutige Modell],
-  [Negation],  [klassisch], [klassisch], [stratifiziertes NAF],
+  [Negation],  [klassisch], [klassisch], [stratifiziertes + stabiles NAF],
   [Abduktion], [`(abduce)`], [über `rule`], [nativ (Regel-Dual)],
   [Theorie],   [nativ], [nativ], [`{…}`-Inneres, dieselbe Engine],
 )
