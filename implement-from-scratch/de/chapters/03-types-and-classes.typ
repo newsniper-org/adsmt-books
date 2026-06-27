@@ -443,22 +443,50 @@ richtige Gestalt dafür ist ein *Prädikat höherer Ordnung*
 (Eine frühere `Preserving('p)`-Relation wurde gebaut und
 dann ausgemustert, sobald dies klar war.)
 
-Wie *drückt man so eine pro-Funktion-Eigenschaft aus und
-trägt sie ab* in der Oberfläche? Mit einem
-sprachinternen Beweisterm über ein
-verfeinerter-Pfeil-Argument:
+Wie *drückt man so eine pro-Funktion-Eigenschaft aus* in der
+Oberfläche? Als genau das, was sie ist — ein *definiertes
+Prädikat höherer Ordnung*. `preserving` nimmt die Funktion
+und formuliert die Erhaltungs-Proposition unmittelbar:
 
 ```
-fn preserving(f : {u:A | 'p(u)} -> {v:A | 'q(v)}) -> Bool:
-    let result = solve forall {x : A | 'p(x)}. 'p(f(x))
-                 by:   forall {y = f(x) | 'p(x)}. 'q(y) ==> 'p(y)
-    return result
+fn preserving(f : {u:A | 'p(u)} -> {v:A | 'q(v)}) -> Bool
+    = forall x : A. 'p(x) ==> 'p(f(x))
 ```
 
-Das `f` hier ist ein verfeinerter Pfeil, also ist seine
-Nachbedingung `post_f : ∀x. 'p(x) ⟹ 'q(f(x))` eine
-verfügbare Tatsache im Rumpf. Der Rest ist das
-`solve … by …`-Konstrukt, das der nächste Abschnitt erklärt.
+Das verfeinerter-Pfeil-Argument wird zum Wertpfeil `A -> A`
+gelöscht; seine Domänen-/Kodomänen-Prädikate `'p` und `'q`
+werden aus dem Inneren des Pfeils eingesammelt und am Kopf
+*implizit* gebunden (Prädikatpolymorphie), sodass der Rumpf
+`'p` benennen darf. Eine solche `Bool`-typisierte Definition
+ist nur eine δ-Definition einer Proposition — sie trägt
+*keine eigene Verpflichtung*. Die Verpflichtung erscheint
+erst an einer *Verwendungsstelle*: `preserving(even, ge0, double)`
+entfaltet sich zum konkreten `∀x. even(x) ⟹ even(double(x))`,
+das die Engine abträgt. (Die schlichteste wiederverwendbare
+Form braucht überhaupt keine Generizität — das erhaltene
+Prädikat kann ein gewöhnliches Argument höherer Ordnung sein,
+`fn preserving(p : A -> Bool, f : A -> A) -> Bool = forall x. p(x) ==> p(f(x))`.)
+
+Das ist die Auflösung einer feinen Falle. Wäre `preserving`
+eine beweis-*erzeugende* `fn` — ein Rumpf, der
+`solve … by …` ausführt und den Beweis zurückgibt —, so
+wäre ihre über das *generische* `'p` und `'q` geschlossene
+Blatt-Verpflichtung `∀'p 'q f. ('q(f x) ==> 'p(f x))`, und
+die ist schlicht *falsch* (nimm `'p := λn. n >= 0`,
+`'q := λn. n >= −5`, `f := λn. n − 3`: `f` bewohnt den
+verfeinerten Pfeil, doch `f(0) = −3` ist nicht `>= 0`). Eine
+Definitionsstelle kann sie nicht abtragen. Als *Prädikat*
+gibt es überhaupt kein Definitions-Blatt — das Blatt
+materialisiert sich erst an einer konkreten Verwendung, wo
+es ehrlich und beweisbar-oder-nicht ist.
+
+Wenn man also ein konkretes `preserving(f)`-Ziel von Hand
+*beweisen* will — unter Berufung auf das Bildlemma
+`'q ==> 'p` zusammen mit `f`s Nachbedingung
+`post_f : ∀x. 'p(x) ==> 'q(f(x))` (vorerst als `axiom`
+behauptet) —, dann ist das genau das `solve … by …`-Konstrukt
+des nächsten Abschnitts. Die Definition *formuliert* die
+Eigenschaft; der Schnitt *trägt sie ab*.
 
 == `solve … by …`: Beweisterme in der Oberfläche
 

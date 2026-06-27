@@ -399,21 +399,46 @@ not agree. Preservation is therefore a property of a
 independently per function. (An earlier `Preserving('p)`
 relation was built and then retired once this was clear.)
 
-How do you *express and discharge* such a per-function
-property in the surface? With an in-language proof term over
-a refined-arrow argument:
+How do you *express* such a per-function property in the
+surface? As exactly what it is — a *defined higher-order
+predicate*. `preserving` takes the function and states the
+preservation proposition directly:
 
 ```
-fn preserving(f : {u:A | 'p(u)} -> {v:A | 'q(v)}) -> Bool:
-    let result = solve forall {x : A | 'p(x)}. 'p(f(x))
-                 by:   forall {y = f(x) | 'p(x)}. 'q(y) ==> 'p(y)
-    return result
+fn preserving(f : {u:A | 'p(u)} -> {v:A | 'q(v)}) -> Bool
+    = forall x : A. 'p(x) ==> 'p(f(x))
 ```
 
-The `f` here is a refined arrow, so its postcondition
-`post_f : ∀x. 'p(x) ⟹ 'q(f(x))` is an available fact in the
-body. The rest is the `solve … by …` construct, which the
-next section explains.
+The refined-arrow argument erases to the value arrow
+`A -> A`; its domain/codomain predicates `'p`/`'q` are
+collected from inside the arrow and bound implicitly at the
+head (predicate polymorphism), so the body may name `'p`. A
+`Bool`-valued definition like this is just a δ-definition of
+a proposition — it carries *no obligation of its own*. The
+obligation appears only at a *use site*:
+`preserving(even, ge0, double)` unfolds to the concrete
+`∀x. even(x) ⟹ even(double(x))`, which the engine discharges.
+(The plainest reusable form needs no generics at all — the
+preserved predicate can be an ordinary higher-order argument
+`fn preserving(p : A -> Bool, f : A -> A) -> Bool = forall x. p(x) ==> p(f(x))`.)
+
+This is the resolution of a subtle trap. Were `preserving` a
+proof-*producing* fn — a body that runs `solve … by …` and
+returns the proof — its leaf obligation, closed over the
+*generic* `'p`/`'q`, would be `∀'p 'q f. ('q(f x) ==> 'p(f x))`,
+which is simply *false* (take `'p := λn. n >= 0`,
+`'q := λn. n >= −5`, `f := λn. n − 3`: `f` inhabits the
+refined arrow yet `f(0) = −3` is not `>= 0`). A definition
+site cannot discharge it. As a *predicate*, there is no
+def-site leaf at all — the leaf only materialises at a
+concrete use, where it is honest and provable-or-not.
+
+So when you want to *prove* a concrete `preserving(f)` goal
+by hand — citing the image lemma `'q ==> 'p` together with
+`f`'s postcondition `post_f : ∀x. 'p(x) ==> 'q(f(x))`
+(asserted as an `axiom` for now) — that is exactly the
+`solve … by …` construct of the next section. The definition
+*states* the property; the cut *discharges* it.
 
 == `solve … by …`: proof terms in the surface
 
