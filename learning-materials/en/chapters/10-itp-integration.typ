@@ -260,21 +260,38 @@ is therefore not a property of the type — it is a
 property of the *function*, a higher-order predicate
 `preserving(f)`, checked independently for each `f`.
 
-And `solve … by …` over a refined-arrow argument is
-exactly how you check it:
+As a *reusable* predicate, preservation is best *defined* —
+a `Bool`-valued higher-order predicate that states the
+proposition, with `'p`/`'q` collected from a refined-arrow
+argument (a `Bool` return carries no obligation of its own):
 
 ```lukb
-fn keeps_pos[ 'p ]( f: { u: Int | 'p } -> { v: Int | 'p } ) : Bool =
-  solve preserving(f)
-  by    forall {u: Int | 'p}. 'p(f(u))
+fn preserving( f: { u: A | 'p(u) } -> { v: A | 'q(v) } ) : Bool =
+  forall x: A. 'p(x) ==> 'p(f(x))
 ```
 
-The refined arrow's postcondition supplies the leaf; the
-bridge ties it to `preserving(f)`. The generic `'p`
-means you check `keeps_pos` _once_, abstractly, and
-every concrete predicate you later pass — positivity,
-boundedness, an invariant — reuses that single checked
-proof.
+The work appears only at a concrete *use* — and that is
+where `solve … by …` earns its place. With `f`'s
+postcondition available (here an explicit `axiom`, from
+`f`'s refined-arrow type), the cut discharges a concrete
+"`f` preserves `p`" goal:
+
+```lukb
+const p: A -> Bool    const q: A -> Bool    const f: A -> A
+axiom post_f: forall {x: A | p(x)}. q(f(x))
+goal:
+  solve forall {x: A | p(x)}. p(f(x))
+  by    forall {y = f(x) | p(x)}. q(y) ==> p(y)
+```
+
+The leaf — "`q ==> p` on the image" — is the genuine
+content; the bridge composes it with `post_f` to close the
+goal. Why a *definition* and not a proof-producing `fn`? A
+`preserving` that ran `solve … by …` in its body and was
+checked once over a _generic_ `'p`/`'q` would be *unsound*:
+its leaf `∀'p 'q f. 'q(f x) ==> 'p(f x)` is false in general.
+So the predicate is *stated* once and *discharged* per
+concrete use.
 
 == Image binders — inference does the work
 

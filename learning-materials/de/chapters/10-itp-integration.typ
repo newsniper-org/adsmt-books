@@ -272,21 +272,40 @@ Typs — sie ist eine Eigenschaft der *Funktion*, ein Prädikat
 höherer Stufe `preserving(f)`, unabhängig für jedes `f`
 geprüft.
 
-Und `solve … by …` über ein verfeinertes Pfeilargument ist
-genau, wie du es prüfst:
+Als _wiederverwendbares_ Prädikat wird die Erhaltung am
+besten *definiert* — ein `Bool`-wertiges Prädikat höherer
+Stufe, das die Aussage festhält, wobei `'p`/`'q` aus einem
+verfeinerten Pfeilargument eingesammelt werden (ein
+`Bool`-Rückgabewert trägt keine eigene Verpflichtung):
 
 ```lukb
-fn keeps_pos[ 'p ]( f: { u: Int | 'p } -> { v: Int | 'p } ) : Bool =
-  solve preserving(f)
-  by    forall {u: Int | 'p}. 'p(f(u))
+fn preserving( f: { u: A | 'p(u) } -> { v: A | 'q(v) } ) : Bool =
+  forall x: A. 'p(x) ==> 'p(f(x))
 ```
 
-Die Nachbedingung des verfeinerten Pfeils liefert das Blatt;
-die Brücke verbindet es mit `preserving(f)`. Das generische
-`'p` bedeutet, dass du `keeps_pos` _einmal_ prüfst, abstrakt,
-und jedes konkrete Prädikat, das du später übergibst —
-Positivität, Beschränktheit, eine Invariante —, diesen einen
-geprüften Beweis wiederverwendet.
+Die Arbeit fällt erst bei einer konkreten *Verwendung* an —
+und genau dort verdient sich `solve … by …` seinen Platz. Mit
+der Nachbedingung von `f` zur Hand (hier ein explizites
+`axiom`, aus dem verfeinerten Pfeiltyp von `f`) entlädt der
+Schnitt ein konkretes Ziel „`f` erhält `p`":
+
+```lukb
+const p: A -> Bool    const q: A -> Bool    const f: A -> A
+axiom post_f: forall {x: A | p(x)}. q(f(x))
+goal:
+  solve forall {x: A | p(x)}. p(f(x))
+  by    forall {y = f(x) | p(x)}. q(y) ==> p(y)
+```
+
+Das Blatt — „`q ==> p` auf dem Bild" — ist der eigentliche
+Inhalt; die Brücke verbindet es mit `post_f`, um das Ziel zu
+schließen. Warum eine *Definition* und kein
+beweiserzeugendes `fn`? Ein `preserving`, das `solve … by …` in seinem Rumpf
+ausführte und _einmal_ über ein _generisches_ `'p`/`'q`
+geprüft würde, wäre *unsolide*: sein Blatt
+`∀'p 'q f. 'q(f x) ==> 'p(f x)` ist im Allgemeinen falsch.
+Das Prädikat wird also _einmal_ *formuliert* und pro konkreter
+Verwendung *entladen*.
 
 == Bild-Binder — die Inferenz erledigt die Arbeit
 
