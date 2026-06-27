@@ -11,7 +11,7 @@
   align: left,
   stroke: 0.5pt + gray,
   table.header([*명령*], [*비고*]),
-  [`set-logic`],   [QF_* 로직들과 그에 대응하는 한정자 버전을 받아들인다. 여러 이론이 등장하면 polite combination이 자동 선택된다.],
+  [`set-logic`],   [`QF_*` 로직들과 그에 대응하는 한정자 버전을 받아들인다. 여러 이론이 등장하면 polite combination이 자동 선택된다.],
   [`set-option`],  [표준 옵션들 + adsmt 고유의 `:abductive-tier`, `:trigger-mode`, `:classical-axioms`.],
   [`declare-sort`, `declare-fun`, `declare-const`], [표준.],
   [`define-fun`, `define-fun-rec`], [표준; `define-fun-rec` 은 부분적(partial)이다 — 종료(termination) 의무는 사용자의 몫이다.],

@@ -12,7 +12,7 @@ Erweiterungen.
   align: left,
   stroke: 0.5pt + gray,
   table.header([*Befehl*], [*Anmerkungen*]),
-  [`set-logic`],   [Akzeptiert die QF_*-Logiken und ihre quantifizierten Pendants. polite-Kombination wird automatisch gewählt, wenn mehrere Theorien auftreten.],
+  [`set-logic`],   [Akzeptiert die `QF_*`-Logiken und ihre quantifizierten Pendants. polite-Kombination wird automatisch gewählt, wenn mehrere Theorien auftreten.],
   [`set-option`],  [Standardoptionen plus adsmt-spezifische `:abductive-tier`, `:trigger-mode`, `:classical-axioms`.],
   [`declare-sort`, `declare-fun`, `declare-const`], [Standard.],
   [`define-fun`, `define-fun-rec`], [Standard; `define-fun-rec` ist partiell — die Terminationsverpflichtung obliegt dem Nutzer.],

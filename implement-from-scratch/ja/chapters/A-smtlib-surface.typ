@@ -11,7 +11,7 @@
   align: left,
   stroke: 0.5pt + gray,
   table.header([*コマンド*], [*備考*]),
-  [`set-logic`],   [QF_* ロジックおよびその量化子付きの対応物を受理する。複数の理論が現れる場合は polite 結合が自動選択される。],
+  [`set-logic`],   [`QF_*` ロジックおよびその量化子付きの対応物を受理する。複数の理論が現れる場合は polite 結合が自動選択される。],
   [`set-option`],  [標準オプションに加え adsmt 固有の `:abductive-tier`、`:trigger-mode`、`:classical-axioms`。],
   [`declare-sort`, `declare-fun`, `declare-const`], [標準。],
   [`define-fun`, `define-fun-rec`], [標準。`define-fun-rec` は部分的 — 停止性の義務はユーザの責任。],

@@ -90,6 +90,250 @@ The user fills in the `sorry`s with their own proofs
 *content* of the assumptions is the user's
 responsibility.
 
+== `solve … by …` — proof terms inside the language
+
+The tactics above live _outside_ adsmt: a Lean or Rocq
+script calls in. But the lukb successor surface
+(`adsmt-ir-lukb`; see the implement-from-scratch lukb
+appendix) has its own _in-language_ bridge to
+ITP-style proof. It is one construct:
+
+```lukb
+solve G by L
+```
+
+Read it as "_a proof of `G`, justified by the lemma
+`L`._" Both `G` and `L` are *blocks* — a term, or a
+`let`-chain ending in a term — so you can build up
+intermediate facts on either side.
+
+This is the *cut rule*, made syntax. Elaboration
+(semantics B: it _constructs a proof term_, it does not
+run the solver at parse time) emits exactly two
+obligations, each closed over the ambient context so it
+is well-formed at top level:
+
+- the *leaf* `L` — discharge the lemma, and
+- the *bridge* `L ⟹ G` — show the lemma implies the
+  goal.
+
+The kernel assembles the proof scaffold from these two;
+the engine discharges the leaf. Because the only
+inference used is the cut — no axiom, no
+verdict-shortcut — `solve` is sound by construction.
+The soundness core is pre-verified in Verus
+(`~/solve-by-verification`, 5 verified, 0 errors).
+
+```lukb
+// goal: the head of a sorted, non-empty list is its minimum.
+goal head_is_min : is_min(head(xs), xs) =
+  solve is_min(head(xs), xs)
+  by    sorted(xs) and nonempty(xs)
+```
+
+The leaf `sorted(xs) ∧ nonempty(xs)` is what _you_ owe;
+the bridge `(sorted(xs) ∧ nonempty(xs)) ⟹
+is_min(head(xs), xs)` is what the engine checks. The
+analogy to `smt_abduce` is exact — `solve` is the
+deductive, _already-justified_ sibling of an abductive
+`sorry`: you name the lemma instead of leaving a hole,
+and adsmt verifies the step rather than guessing it.
+
+== Refinement types carry the intent
+
+A `solve` is only as sharp as the propositions you can
+_state_. The lukb successor surface states verification
+intent with *refinement types*: a base sort carved by
+a predicate,
+
+```lukb
+{ v: T | φ }
+```
+
+— the sort `T` restricted to those `v` satisfying `φ`.
+Refinements are usable anywhere a type is: on a
+`const`, on an `fn` parameter or return, on either side
+of an arrow, and as a quantifier binder. `Nat` and
+`WNat` are themselves refinements of `Int`
+(`Nat = {x: Int | x ≥ 1}`, `WNat = {x: Int | x ≥ 0}`).
+
+A `const` at a refined type postulates _both_ the typing
+and the predicate as a trusted fact:
+
+```lukb
+const c : { v: Int | v ≥ 0 }   // gives  c : Int  AND  c ≥ 0
+```
+
+A refinement on a quantifier binder elaborates by the
+pre-verified relativization lemma — the polarity is the
+thing to remember:
+
+#table(
+  columns: 2,
+  align: left,
+  stroke: 0.5pt + gray,
+  table.header([*binder*], [*elaborates to*]),
+  [`forall {v:T|φ}. ψ`], [`forall v:T. φ ⟹ ψ`],
+  [`exists {v:T|φ}. ψ`], [`exists v:T. φ ∧ ψ`],
+)
+
+So `∀` weakens to an implication, `∃` strengthens to a
+conjunction. Get the polarity backwards and you have
+either a vacuous obligation or an unsatisfiable one;
+adsmt's elaborator fixes it for you, but it is worth
+holding in your head when you read the desugared goal.
+
+*Function types and refined arrows.* `T -> U` is the
+arrow (right-associative; `(A -> B) -> C` parenthesises
+an _arrow domain_). Refine both ends and the arrow
+carries a contract:
+
+```lukb
+{ u: A | 'p } -> { v: A | 'q }
+```
+
+— a precondition `'p` on the domain, a postcondition
+`'q` on the codomain. The _value_ sort is still the
+plain `A -> A`; the refinements are proof-irrelevant and
+erased at lowering. The payoff is that an argument
+supplied at this type _hands you its postcondition `'q`
+as a usable fact_ — exactly the hypothesis a downstream
+`solve` wants.
+
+== Generic predicate parameters `'p`
+
+The leading single quote in `'p` above is not
+decoration: it marks a *generic predicate parameter*,
+making a definition predicate-_polymorphic_. An `fn`
+whose refinements mention `'p` binds it implicitly at
+the head as `Π('p : T → Prop)`, and the body type-checks
+*once*, with `'p` held abstract — the "checked-once"
+guarantee. Parameter refinements become preconditions,
+the return refinement a postcondition, and the whole
+contract
+
+$ forall arrow('p). thin forall arrow(x). thin
+  (and.big_i "pre"_i) arrow.r.double "post" $
+
+is a *goal* when you are _defining_ the function (the
+construct-site obligation, discharged by the engine) and
+a *trusted axiom* when it is only a _signature_. At a
+use site you instantiate `'p := q`; the now-monomorphic
+precondition is discharged on the spot. This is
+*dictionary-passing*: the caller supplies the predicate
+the callee abstracted over.
+
+The single quote is what disambiguates, at parse time, a
+generic `'q` from a *concrete* predicate `q` (no quote).
+Concrete refinement `fn`s get the same contract
+treatment — the genericity is the only difference.
+
+*The trivial predicate `nop`.* For uniformity the
+refinement-aware logic always wants to see a predicate,
+so an _unrefined_ `x: T` is read as `{x: T | nop(x)}`,
+where
+
+```lukb
+nop : Π(T: Type). T → Prop := λ T x. true
+```
+
+Since `nop(x) ≡ true`, a `nop` refinement is vacuous: it
+is dropped — no hypothesis, no guard emitted — so the
+desugared output stays clean, and `const c: {v:T|nop(v)}`
+is just `const c: T`. You will never write `nop`
+yourself; it is the identity element that lets "refined"
+and "unrefined" share one code path.
+
+== Putting it together: preservation
+
+These pieces compose into a small but real verification
+idiom. Suppose a datatype `A` has many functions, and
+you want to say "_`f` preserves the property `'p`._"
+
+The tempting move is to make `Preserving('p)` a *type
+relation* (adsmt's own term for a type class; see the
+next section). That was tried and *retired* — it is the
+wrong abstraction. A type relation is _coherent_: one
+instance per type. But `A` may have _many_ `'p`-
+preserving functions, and many that don't. Preservation
+is therefore not a property of the type — it is a
+property of the *function*, a higher-order predicate
+`preserving(f)`, checked independently for each `f`.
+
+And `solve … by …` over a refined-arrow argument is
+exactly how you check it:
+
+```lukb
+fn keeps_pos[ 'p ]( f: { u: Int | 'p } -> { v: Int | 'p } ) : Bool =
+  solve preserving(f)
+  by    forall {u: Int | 'p}. 'p(f(u))
+```
+
+The refined arrow's postcondition supplies the leaf; the
+bridge ties it to `preserving(f)`. The generic `'p`
+means you check `keeps_pos` _once_, abstractly, and
+every concrete predicate you later pass — positivity,
+boundedness, an invariant — reuses that single checked
+proof.
+
+== Image binders — inference does the work
+
+One more binder form, driven almost entirely by type
+inference. An *image binder*
+
+```lukb
+forall { y = f(x) | c }. q(y)
+```
+
+ranges over the inferred _preimage_ `x` (its sort is
+`f`'s domain), guards it by `c`, and unfolds `y` to
+`f(x)` in the body. By the pre-verified
+`image_quantifier_desugar` it is exactly
+
+```lukb
+forall x: { A | c }. q(f(x))
+```
+
+You write the quantifier in terms of the _value you care
+about_ (`y`, in the image of `f`); adsmt recovers the
+variable it must actually range over (`x`, in the
+domain). It is a small convenience that reads the way the
+mathematics reads.
+
+== Type relations are type classes
+
+"_Type relation_" is adsmt's name for a type class —
+*one* concept, and `adsmt-class` is literally the
+type-class layer (`Relation` / `Instance` / `Resolver` /
+`Dict` / `Law`). The *\*Like family* — `PartialOrd` →
+`Ord` → `IntegerLike`, `RealLike`, … — shares a
+`Reduces` spine, and `IntegerLike(I, L, N)` is the first
+_higher-kinded_ instance.
+
+Two properties matter for verification:
+
+- *Lawful-by-proof.* A relation carries *law*
+  goal-members beside its method members. An instance is
+  admitted only if adsmt's _own engine_ proves every law
+  — otherwise the build is *rejected*
+  (`declare_instance_lawful` + an engine-backed
+  `LawProver`). The same solver that discharges a `solve`
+  leaf is what certifies that `Ord` for your type is
+  actually a total order.
+- *Predicate parameters.* A relation may carry a
+  predicate parameter `'p : T → Prop` that an instance
+  supplies as a *dictionary* entry — the same
+  dictionary-passing you saw with generic `fn`s, now at
+  the instance level.
+
+This is one face of the *four-way interlock* that is
+adsmt's core design intent: type inference, abductive-
+deductive logic, ASP, and SMT (plus HKT) are meant to
+_organically_ interlock rather than sit in separate
+silos. `IntegerLike(I, L, N)` is the connective tissue —
+type information flowing, through a higher-kinded
+instance, into the engines that `solve` calls on.
+
 == Rocq integration
 
 The Rocq backend (`~/adsmt-contrib/adsmt-emit-rocq`)
@@ -238,4 +482,11 @@ adsmt found the structure; the user supplied the
 domain knowledge.
 
 This — *partnership between solver and prover* — is
-what adsmt is for.
+what adsmt is for. The external tactics (`smt_decide`,
+`smt_abduce`) and the in-language proof term
+(`solve … by …`) are two routes to the same place: in
+both, the human names the intent — a hypothesis to fill,
+a refinement to carry, a lemma to cut on — and the
+engine discharges the obligation under a kernel-checked
+scaffold. Whether the proof lives in Lean or in a lukb
+`goal`, the division of labour is the same.

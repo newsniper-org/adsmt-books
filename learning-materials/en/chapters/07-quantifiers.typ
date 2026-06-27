@@ -169,6 +169,137 @@ These transformations push the quantifier-handling
 work *out* of SMT and into either the user's editor or
 the ITP's induction tactics.
 
+== Refinement-constrained quantifiers
+
+The SMT-LIB surface gives you bare $forall x. phi(x)$.
+adsmt's *lu-kb successor surface* — the typed knowledge-
+base face with `sort` / `const` / `fn` / `data` /
+`axiom` / `assume` / `goal` items — lets you write the
+domain *restriction* directly into the binder. Instead of
+
+```text
+forall (n: Int). n >= 0 => p(n)
+```
+
+you write a *refinement type* as the binder's sort:
+
+```text
+forall {n: Int | n >= 0}. p(n)
+```
+
+A refinement type `{v: T | φ}` is a base sort `T` carved
+by a predicate `φ`. The brace-binder ranges over exactly
+those `T` that satisfy `φ`. This is sugar, not a new
+logic: the elaborator unfolds the restriction back into
+ordinary first-order shape, and the *polarity of that
+unfolding depends on the quantifier*:
+
+#table(
+  columns: 2,
+  align: left,
+  stroke: 0.5pt + gray,
+  table.header([*Binder*], [*Elaborates to*]),
+  [`forall {v: T | φ}. ψ`], [`forall (v: T). φ => ψ`],
+  [`exists {v: T | φ}. ψ`], [`exists (v: T). φ and ψ`],
+)
+
+A universal *implies* (every `v` that passes `φ` must
+satisfy `ψ`); an existential *conjoins* (some `v` both
+passes `φ` and satisfies `ψ`). The two arrows
+$forall arrow.r.double.long (=>)$ and
+$exists arrow.r.long (and)$ are not a convention you have
+to remember — they are the conclusions of a single
+pre-verified relativization lemma, so the desugaring is
+trusted to preserve satisfiability.
+
+`Nat` and `WNat` ship as refinements of `Int`:
+
+```text
+; Nat  = {x: Int | x >= 1}
+; WNat = {x: Int | x >= 0}
+forall {n: Nat}. p(n)       ; ranges over 1, 2, 3, ...
+forall {n: WNat}. p(n)      ; ranges over 0, 1, 2, ...
+```
+
+Writing `forall {n: Nat}. p(n)` is exactly
+`forall (n: Int). n >= 1 => p(n)` — but you state the
+intent once, in the binder, instead of threading a guard
+through the body.
+
+=== The comparison sugar
+
+The common case — a binder restricted by a single
+comparison against a fixed bound — has an even lighter
+form that drops the braces and the predicate variable:
+
+```text
+forall (n: Int) >= 0. p(n)        ; {n: Int | n >= 0}
+forall (k: Int) < limit. q(k)     ; {k: Int | k < limit}
+exists (i: Int) > 0. r(i)         ; {i: Int | i > 0}
+```
+
+`forall (n: T) op rhs. ψ` reads "for all `n` of sort `T`
+with `n op rhs`" and means exactly the brace form
+`forall {n: T | n op rhs}. ψ`. It inherits the same
+$forall arrow.r.double.long (=>)$ /
+$exists arrow.r.long (and)$ polarity, because it *is* the
+brace form after a one-step rewrite. Reach for it
+whenever the restriction is a lone bound check; reach for
+the full `{v: T | φ}` braces when the predicate is
+compound.
+
+=== Why this is more than syntax
+
+Two payoffs. First, *readability*: the domain of a
+quantifier is stated where the variable is introduced,
+not buried as the antecedent of an implication the reader
+has to scan for. Second, *uniformity*: an unrefined
+binder `x: T` is internally treated as
+`{x: T | nop(x)}`, where `nop` is the trivial predicate
+that is always `true`. The refinement-aware logic
+therefore *always* sees a predicate on every binder; a
+`nop` refinement is vacuous and emits no guard, so
+`forall (x: T). ψ` stays exactly $forall x. psi$ with no
+clutter. You get the expressive brace form without paying
+for it when you don't use it.
+
+== Image binders — quantifying over a function's range
+
+Sometimes the variable you want to talk about is not a
+fresh domain element but the *image* of one under a
+function: "for every `y` that is `f` of some `x`
+satisfying `c`...". Spelling that out by hand means
+introducing the preimage `x`, restricting it, and
+substituting `f(x)` everywhere `y` appears. adsmt's
+successor surface gives you an *image binder* that does
+the substitution for you, driven entirely by type
+inference:
+
+```text
+forall {y = f(x) | p(x)}. q(y)
+```
+
+This ranges over the *preimage* `x` — whose sort the
+elaborator infers as `f`'s domain — guarded by `p(x)`,
+with `y` unfolded to `f(x)` in the body. It is precisely
+
+```text
+forall (x: {A | p(x)}). q(f(x))
+```
+
+where `A` is `f`'s domain sort. The `y` is never a real
+binder; it is a *name for `f(x)`* that keeps the body
+readable. Like the refinement binders, this rewrite
+(`image_quantifier_desugar`) is pre-verified, so the
+abbreviation is a trusted equivalence, not a fragile
+macro.
+
+Use it when the natural statement is about outputs —
+"every value the parser produces is well-formed", "every
+element reachable by `step` stays in the invariant" — and
+you would otherwise have to hand-roll the preimage
+variable and carry `f(x)` through the body yourself.
+
 == Quantifiers in real proof scripts
 
 A Lean 4 tactic invocation:
@@ -205,7 +336,16 @@ obligation.
 2. *Triggers* are the most important user-controllable
    variable. Pick them deliberately when E-matching
    exhausts.
-3. The *abductive escape* (chapter 8) is adsmt's
+3. In the *lu-kb successor surface*, push the domain
+   into the binder. `forall {n: T | φ}. ψ` and its
+   comparison sugar `forall (n: T) op rhs. ψ` say what
+   you mean once — and the $forall arrow.r.double.long
+   (=>)$ / $exists arrow.r.long (and)$ relativization is
+   trusted, so the restriction is not lost in
+   translation. *Image binders* `forall {y = f(x) | c}`
+   let you quantify over a function's range without
+   spelling out the preimage.
+4. The *abductive escape* (chapter 8) is adsmt's
    answer to "but what if I really need a verdict?":
    instead of giving up, the solver hands you a
    hypothesis menu.

@@ -92,6 +92,260 @@ Geltungsbereich). Die *Struktur* des Beweises wird von adsmt
 geliefert; der *Inhalt* der Annahmen liegt in der
 Verantwortung des Benutzers.
 
+== `solve … by …` — Beweisterme innerhalb der Sprache
+
+Die obigen Taktiken leben _außerhalb_ von adsmt: ein Lean-
+oder Rocq-Skript ruft herein. Aber die
+lukb-Nachfolgeroberfläche (`adsmt-ir-lukb`; siehe den
+lukb-Anhang zur Implementierung von Grund auf) hat ihre
+eigene _sprachinterne_ Brücke zum ITP-artigen Beweis. Es ist
+ein einziges Konstrukt:
+
+```lukb
+solve G by L
+```
+
+Lies es als „_ein Beweis von `G`, gerechtfertigt durch das
+Lemma `L`._" Sowohl `G` als auch `L` sind *Blöcke* — ein
+Term oder eine `let`-Kette, die in einem Term endet —, sodass
+du auf beiden Seiten Zwischenfakten aufbauen kannst.
+
+Dies ist die *Schnittregel*, zur Syntax gemacht. Die
+Elaboration (Semantik B: sie _konstruiert einen Beweisterm_,
+sie führt den Solver nicht zur Parse-Zeit aus) gibt genau
+zwei Verpflichtungen aus, jede über den umgebenden Kontext
+abgeschlossen, sodass sie auf oberster Ebene wohlgeformt ist:
+
+- das *Blatt* `L` — das Lemma erledigen, und
+- die *Brücke* `L ⟹ G` — zeigen, dass das Lemma das Ziel
+  impliziert.
+
+Der Kern setzt das Beweisgerüst aus diesen beiden zusammen;
+die Engine erledigt das Blatt. Da die einzige verwendete
+Inferenz der Schnitt ist — kein Axiom, keine
+Verdikt-Abkürzung —, ist `solve` per Konstruktion korrekt.
+Der Korrektheitskern ist in Verus vorab verifiziert
+(`~/solve-by-verification`, 5 verifiziert, 0 Fehler).
+
+```lukb
+// goal: the head of a sorted, non-empty list is its minimum.
+goal head_is_min : is_min(head(xs), xs) =
+  solve is_min(head(xs), xs)
+  by    sorted(xs) and nonempty(xs)
+```
+
+Das Blatt `sorted(xs) ∧ nonempty(xs)` ist das, was _du_
+schuldest; die Brücke `(sorted(xs) ∧ nonempty(xs)) ⟹
+is_min(head(xs), xs)` ist das, was die Engine prüft. Die
+Analogie zu `smt_abduce` ist exakt — `solve` ist das
+deduktive, _bereits gerechtfertigte_ Geschwister eines
+abduktiven `sorry`: du benennst das Lemma, anstatt eine Lücke
+zu lassen, und adsmt verifiziert den Schritt, anstatt ihn zu
+erraten.
+
+== Verfeinerungstypen tragen die Absicht
+
+Ein `solve` ist nur so scharf wie die Propositionen, die du
+_formulieren_ kannst. Die lukb-Nachfolgeroberfläche formuliert
+die Verifikationsabsicht mit *Verfeinerungstypen*: eine
+Basis-Sorte, herausgeschnitten durch ein Prädikat,
+
+```lukb
+{ v: T | φ }
+```
+
+— die Sorte `T`, eingeschränkt auf jene `v`, die `φ`
+erfüllen. Verfeinerungen sind überall dort verwendbar, wo ein
+Typ steht: an einer `const`, an einem `fn`-Parameter oder
+-Rückgabewert, auf jeder Seite eines Pfeils und als
+Quantor-Binder. `Nat` und `WNat` sind selbst Verfeinerungen
+von `Int` (`Nat = {x: Int | x ≥ 1}`,
+`WNat = {x: Int | x ≥ 0}`).
+
+Eine `const` an einem verfeinerten Typ postuliert _sowohl_ die
+Typisierung _als auch_ das Prädikat als vertrauenswürdige
+Tatsache:
+
+```lukb
+const c : { v: Int | v ≥ 0 }   // gives  c : Int  AND  c ≥ 0
+```
+
+Eine Verfeinerung an einem Quantor-Binder elaboriert über das
+vorab verifizierte Relativierungslemma — die Polarität ist
+das, was man sich merken muss:
+
+#table(
+  columns: 2,
+  align: left,
+  stroke: 0.5pt + gray,
+  table.header([*Binder*], [*elaboriert zu*]),
+  [`forall {v:T|φ}. ψ`], [`forall v:T. φ ⟹ ψ`],
+  [`exists {v:T|φ}. ψ`], [`exists v:T. φ ∧ ψ`],
+)
+
+So schwächt `∀` zu einer Implikation ab, `∃` verstärkt zu
+einer Konjunktion. Bekommst du die Polarität verkehrt herum,
+hast du entweder eine vakuöse Verpflichtung oder eine
+unerfüllbare; adsmts Elaborator korrigiert das für dich, aber
+es lohnt sich, dies im Kopf zu behalten, wenn du das
+entzuckerte Ziel liest.
+
+*Funktionstypen und verfeinerte Pfeile.* `T -> U` ist der
+Pfeil (rechtsassoziativ; `(A -> B) -> C` klammert eine
+_Pfeil-Domäne_ ein). Verfeinere beide Enden, und der Pfeil
+trägt einen Vertrag:
+
+```lukb
+{ u: A | 'p } -> { v: A | 'q }
+```
+
+— eine Vorbedingung `'p` an der Domäne, eine Nachbedingung
+`'q` an der Kodomäne. Die _Wert_-Sorte ist nach wie vor das
+schlichte `A -> A`; die Verfeinerungen sind beweisirrelevant
+und werden beim Lowering gelöscht. Der Gewinn ist, dass ein
+zu diesem Typ geliefertes Argument _dir seine Nachbedingung
+`'q` als verwendbare Tatsache überreicht_ — genau die
+Hypothese, die ein nachgelagertes `solve` will.
+
+== Generische Prädikatparameter `'p`
+
+Das führende einfache Anführungszeichen in `'p` oben ist
+keine Dekoration: es markiert einen *generischen
+Prädikatparameter* und macht eine Definition
+prädikat-_polymorph_. Ein `fn`, dessen Verfeinerungen `'p`
+erwähnen, bindet es implizit am Kopf als `Π('p : T → Prop)`,
+und der Rumpf wird *einmal* typgeprüft, mit `'p` abstrakt
+gehalten — die „Einmal-geprüft"-Garantie. Parameter-
+Verfeinerungen werden zu Vorbedingungen, die
+Rückgabe-Verfeinerung zu einer Nachbedingung, und der gesamte
+Vertrag
+
+$ forall arrow('p). thin forall arrow(x). thin
+  (and.big_i "pre"_i) arrow.r.double "post" $
+
+ist ein *Ziel*, wenn du die Funktion _definierst_ (die
+Konstruktionsstellen-Verpflichtung, von der Engine erledigt),
+und ein *vertrauenswürdiges Axiom*, wenn es nur eine
+_Signatur_ ist. An einer Verwendungsstelle instanziierst du
+`'p := q`; die nun monomorphe Vorbedingung wird auf der Stelle
+erledigt. Dies ist *Dictionary-Passing*: der Aufrufer liefert
+das Prädikat, über das der Aufgerufene abstrahiert hat.
+
+Das einfache Anführungszeichen ist das, was zur Parse-Zeit ein
+generisches `'q` von einem *konkreten* Prädikat `q` (ohne
+Anführungszeichen) unterscheidet. Konkrete verfeinerte `fn`s
+erhalten dieselbe Vertragsbehandlung — die Generizität ist der
+einzige Unterschied.
+
+*Das triviale Prädikat `nop`.* Aus Gründen der
+Einheitlichkeit will die verfeinerungsbewusste Logik stets ein
+Prädikat sehen, sodass ein _unverfeinertes_ `x: T` als
+`{x: T | nop(x)}` gelesen wird, wobei
+
+```lukb
+nop : Π(T: Type). T → Prop := λ T x. true
+```
+
+Da `nop(x) ≡ true`, ist eine `nop`-Verfeinerung vakuös: sie
+wird verworfen — keine Hypothese, kein Guard ausgegeben —,
+sodass die entzuckerte Ausgabe sauber bleibt, und
+`const c: {v:T|nop(v)}` ist einfach `const c: T`. Du wirst
+`nop` niemals selbst schreiben; es ist das Identitätselement,
+das es „verfeinert" und „unverfeinert" erlaubt, sich einen
+Codepfad zu teilen.
+
+== Alles zusammensetzen: Erhaltung
+
+Diese Bausteine setzen sich zu einem kleinen, aber echten
+Verifikations-Idiom zusammen. Angenommen, ein Datentyp `A` hat
+viele Funktionen, und du willst sagen „_`f` erhält die
+Eigenschaft `'p`._"
+
+Der verlockende Zug ist, `Preserving('p)` zu einer
+*Typrelation* zu machen (adsmts eigener Begriff für eine
+Typklasse; siehe den nächsten Abschnitt). Das wurde versucht
+und *zurückgezogen* — es ist die falsche Abstraktion. Eine
+Typrelation ist _kohärent_: eine Instanz pro Typ. Aber `A`
+kann _viele_ `'p`-erhaltende Funktionen haben und viele, die
+es nicht tun. Die Erhaltung ist daher keine Eigenschaft des
+Typs — sie ist eine Eigenschaft der *Funktion*, ein Prädikat
+höherer Stufe `preserving(f)`, unabhängig für jedes `f`
+geprüft.
+
+Und `solve … by …` über ein verfeinertes Pfeilargument ist
+genau, wie du es prüfst:
+
+```lukb
+fn keeps_pos[ 'p ]( f: { u: Int | 'p } -> { v: Int | 'p } ) : Bool =
+  solve preserving(f)
+  by    forall {u: Int | 'p}. 'p(f(u))
+```
+
+Die Nachbedingung des verfeinerten Pfeils liefert das Blatt;
+die Brücke verbindet es mit `preserving(f)`. Das generische
+`'p` bedeutet, dass du `keeps_pos` _einmal_ prüfst, abstrakt,
+und jedes konkrete Prädikat, das du später übergibst —
+Positivität, Beschränktheit, eine Invariante —, diesen einen
+geprüften Beweis wiederverwendet.
+
+== Bild-Binder — die Inferenz erledigt die Arbeit
+
+Eine weitere Binder-Form, fast vollständig von der
+Typinferenz getrieben. Ein *Bild-Binder*
+
+```lukb
+forall { y = f(x) | c }. q(y)
+```
+
+läuft über das inferierte _Urbild_ `x` (seine Sorte ist die
+Domäne von `f`), schützt es durch `c` und entfaltet `y` zu
+`f(x)` im Rumpf. Nach dem vorab verifizierten
+`image_quantifier_desugar` ist er genau
+
+```lukb
+forall x: { A | c }. q(f(x))
+```
+
+Du schreibst den Quantor in Begriffen des _Werts, der dich
+interessiert_ (`y`, im Bild von `f`); adsmt stellt die
+Variable wieder her, über die er tatsächlich laufen muss (`x`,
+in der Domäne). Es ist eine kleine Annehmlichkeit, die sich so
+liest, wie die Mathematik sich liest.
+
+== Typrelationen sind Typklassen
+
+„_Typrelation_" ist adsmts Name für eine Typklasse — *ein*
+Konzept, und `adsmt-class` ist buchstäblich die
+Typklassenschicht (`Relation` / `Instance` / `Resolver` /
+`Dict` / `Law`). Die *\*Like-Familie* — `PartialOrd` → `Ord`
+→ `IntegerLike`, `RealLike`, … — teilt sich ein
+`Reduces`-Rückgrat, und `IntegerLike(I, L, N)` ist die erste
+_höherwertige_ (higher-kinded) Instanz.
+
+Zwei Eigenschaften zählen für die Verifikation:
+
+- *Lawful-durch-Beweis.* Eine Relation trägt neben ihren
+  Methoden-Mitgliedern auch *Gesetzes*-Zielmitglieder. Eine
+  Instanz wird nur dann zugelassen, wenn adsmts _eigene
+  Engine_ jedes Gesetz beweist — andernfalls wird der Build
+  *abgelehnt* (`declare_instance_lawful` + ein
+  Engine-gestützter `LawProver`). Derselbe Solver, der ein
+  `solve`-Blatt erledigt, ist es, der zertifiziert, dass `Ord`
+  für deinen Typ tatsächlich eine totale Ordnung ist.
+- *Prädikatparameter.* Eine Relation kann einen
+  Prädikatparameter `'p : T → Prop` tragen, den eine Instanz
+  als *Dictionary*-Eintrag liefert — dasselbe
+  Dictionary-Passing, das du bei generischen `fn`s gesehen
+  hast, nun auf Instanzebene.
+
+Dies ist eine Facette des *Vier-Wege-Verbunds*, der adsmts
+zentrale Entwurfsabsicht ist: Typinferenz, abduktiv-deduktive
+Logik, ASP und SMT (plus HKT) sollen _organisch_
+ineinandergreifen, statt in getrennten Silos zu sitzen.
+`IntegerLike(I, L, N)` ist das Bindegewebe — Typinformation,
+die durch eine höherwertige Instanz in die Engines fließt, die
+`solve` heranzieht.
+
 == Rocq-Integration
 
 Das Rocq-Backend (`~/adsmt-contrib/adsmt-emit-rocq`) gibt
@@ -244,4 +498,11 @@ adsmt fand die Struktur; der Benutzer lieferte das
 Bereichswissen.
 
 Dies — *Partnerschaft zwischen Solver und Beweiser* — ist,
-wofür adsmt da ist.
+wofür adsmt da ist. Die externen Taktiken (`smt_decide`,
+`smt_abduce`) und der sprachinterne Beweisterm
+(`solve … by …`) sind zwei Wege zum selben Ort: in beiden
+benennt der Mensch die Absicht — eine zu füllende Hypothese,
+eine zu tragende Verfeinerung, ein Lemma, auf das geschnitten
+wird — und die Engine erledigt die Verpflichtung unter einem
+kerngeprüften Gerüst. Ob der Beweis in Lean oder in einem
+lukb-`goal` lebt, die Arbeitsteilung ist dieselbe.
