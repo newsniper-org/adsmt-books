@@ -329,6 +329,26 @@ pub fn install_numberlike_checked(
   타입이다. 그것은 순수한 논리곱 표지자이다 — 자체 메서드
   없음, 자체 법칙 없음, 모든 것이 두 전제를 통해 상속된다.
 
+- *체 축.* `RealLike(R)`은 `PartialIntegerLike`의 체-쪽
+  형제이다 — 같은 `{add, mul, domain}` 핵심이지만, 그
+  순서는 박아 넣어진 것이 아니라 인스턴스의 `PartialOrd(R)`
+  전제를 통해 들어온다. 진짜 수학적 `Real`은 추가로 별도의
+  `Ord(Real)` 인스턴스(조밀한 전순서)를 가진다. `FloatingPoint`
+  운반 타입은 `RealLike` + `PartialOrd`이지만 결코 `Ord`는
+  아닌데, `NaN`이 전체성을 깨기 때문이다.
+
+- *확대 축.* `ComplexIntegerLike(C, B)`와 `ComplexLike(C, B)`는
+  차수 2의 환/체 *확대* `C = a + bζ`이며, 생성원 `ζ`는
+  허이차(imaginary-quadratic) 모닉 최소 다항식 `x² + c1·x + c0`의
+  근이다. 그것들은 `{add, mul, norm}`을 운반하며 — 노름
+  `N(a + bζ) = a² − c1·ab + c0·b²`은 운반 타입 원소를 그 기저로
+  내려보낸다 — 계수 기저를 전제로 한다: `ComplexIntegerLike`은
+  `IntegerLike` 기저 위에서(인스턴스 `ℤ[i]`, `ℤ[ω]`),
+  `ComplexLike`은 `RealLike` 기저 위에서(인스턴스 `ℂ = ℝ[i]`).
+  결정적으로 그것들은 순서를 *전혀* 운반하지 않으므로(`ℂ`는
+  호환되는 전순서가 없다), `Ord` 전제를 가진 하위트레이트가
+  아니라 `IntegerLike`의 형제이다.
+
 전제-인지 `Dict`가 상속을 작동하게 만든다. `Ord`의
 전체성 법칙은 `le`를 참조하는데, 그것은 `PartialOrd`
 사전에 산다. `Dict::method`는 그것을 `Ord` 인스턴스의
@@ -353,6 +373,17 @@ pub fn install_numberlike_checked(
 호환되는 전순서가 없는 운반 타입 — 가령 `NaN`을 가진 미래의
 `FloatingPoint(M, E)` — 은 그 게이트에 의해 거부되고
 `PartialOrd`로만 남는다.
+
+확대 축도 같은 발상으로 보호되지만, 엔진 의무 대신
+*결정 가능한* 게이트로써 그렇게 한다. `ComplexIntegerLike`/
+`ComplexLike` 인스턴스는 그 최소 다항식이 기약일 때만 —
+동치로, 그 판별식이 `c1² − 4c0 < 0`(허이차)일 때만 —
+받아들여진다. 이유는 건전성이다: 차수 2의 가약 다항식은
+영인자(zero divisor)를 가지며, 운반 타입 안의 영인자는
+지상 방정식을 거짓인 `0 = 비영(non-zero)`으로 환원시켜
+허위 `unsat`을 보고하게 만들 수 있다. 노름 뒤의 환원
+대수는 Verus로 사전 검증되어 있다. 판별식 게이트는 애초에
+건전하지 않은 운반 타입을 데이터베이스에서 막아내는 것이다.
 
 == 관계 위의 술어 매개변수
 

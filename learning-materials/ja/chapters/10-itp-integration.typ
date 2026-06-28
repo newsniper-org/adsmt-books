@@ -305,7 +305,7 @@ forall x: { A | c }. q(f(x))
 概念であり、`adsmt-class` は文字通り型クラス層である
 (`Relation` / `Instance` / `Resolver` / `Dict` / `Law`)。
 *\*Like 族* — `PartialOrd` → `Ord` → `IntegerLike`、
-`RealLike`、… — は `Reduces` の背骨を共有し、
+`RealLike`、`ComplexLike` — は `Reduces` の背骨を共有し、
 `IntegerLike(I, L, N)` は最初の _高階種_ インスタンスである。
 
 検証にとって二つの性質が重要である。

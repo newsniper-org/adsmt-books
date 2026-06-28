@@ -337,7 +337,7 @@ liest, wie die Mathematik sich liest.
 Konzept, und `adsmt-class` ist buchstäblich die
 Typklassenschicht (`Relation` / `Instance` / `Resolver` /
 `Dict` / `Law`). Die *\*Like-Familie* — `PartialOrd` → `Ord`
-→ `IntegerLike`, `RealLike`, … — teilt sich ein
+→ `IntegerLike`, `RealLike`, `ComplexLike` — teilt sich ein
 `Reduces`-Rückgrat, und `IntegerLike(I, L, N)` ist die erste
 _höherwertige_ (higher-kinded) Instanz.
 

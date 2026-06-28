@@ -323,7 +323,7 @@ mathematics reads.
 *one* concept, and `adsmt-class` is literally the
 type-class layer (`Relation` / `Instance` / `Resolver` /
 `Dict` / `Law`). The *\*Like family* — `PartialOrd` →
-`Ord` → `IntegerLike`, `RealLike`, … — shares a
+`Ord` → `IntegerLike`, `RealLike`, `ComplexLike` — shares a
 `Reduces` spine, and `IntegerLike(I, L, N)` is the first
 _higher-kinded_ instance.
 

@@ -313,7 +313,7 @@ forall x: { A | c }. q(f(x))
 *하나의* 개념이며, `adsmt-class` 는 문자 그대로 타입-
 클래스 계층이다 (`Relation` / `Instance` / `Resolver` /
 `Dict` / `Law`). *\*Like 가족* — `PartialOrd` → `Ord` →
-`IntegerLike`, `RealLike`, … — 은 `Reduces` 척추를
+`IntegerLike`, `RealLike`, `ComplexLike` — 은 `Reduces` 척추를
 공유하며, `IntegerLike(I, L, N)` 은 첫 번째 _고차 종류_
 (higher-kinded) 인스턴스이다.
 

@@ -381,6 +381,29 @@ reduzieren lässt):
   Methoden, keine eigenen Gesetze, alles über die zwei
   Prämissen geerbt.
 
+- *Körper-Achse.* `RealLike(R)` ist das körperseitige
+  Geschwister von `PartialIntegerLike` — derselbe Kern
+  `{add, mul, domain}`, doch seine Ordnung kommt über die
+  `PartialOrd(R)`-Prämisse der Instanz statt fest eingebaut zu
+  sein. Das echte mathematische `Real` erhält zusätzlich eine
+  separate `Ord(Real)`-Instanz (eine dichte Totalordnung); ein
+  `FloatingPoint`-Träger wäre `RealLike` + `PartialOrd`, aber
+  niemals `Ord`, da `NaN` die Totalität bricht.
+
+- *Erweiterungs-Achse.* `ComplexIntegerLike(C, B)` und
+  `ComplexLike(C, B)` sind die Ring-/Körper-*Erweiterungen*
+  vom Grad 2 `C = a + bζ`, wobei der Erzeuger `ζ` eine
+  Nullstelle eines imaginär-quadratischen, normierten
+  Minimalpolynoms `x² + c1·x + c0` ist. Sie tragen
+  `{add, mul, norm}` — die Norm `N(a + bζ) = a² − c1·ab + c0·b²`
+  bildet ein Trägerelement auf seine Basis ab — und setzen die
+  Koeffizienten-Basis voraus: `ComplexIntegerLike` über einer
+  `IntegerLike`-Basis (Instanzen `ℤ[i]`, `ℤ[ω]`), `ComplexLike`
+  über einer `RealLike`-Basis (Instanz `ℂ = ℝ[i]`).
+  Entscheidend tragen sie *gar keine* Ordnung (`ℂ` hat keine
+  kompatible Totalordnung), sind also Geschwister von
+  `IntegerLike` statt Subtraits mit einer `Ord`-Prämisse.
+
 Das prämissen-bewusste `Dict` ist es, das die Vererbung
 funktionieren lässt. Das Totalitäts-Gesetz von `Ord`
 verweist auf `le`, das im `PartialOrd`-Wörterbuch lebt;
@@ -408,6 +431,20 @@ Das gesetzeskonforme Tor ist hier keine Dekoration. Eine
 kompatible Totalordnung — ein künftiges
 `FloatingPoint(M, E)` mit `NaN`, etwa — wird durch dieses
 Tor abgewiesen und bleibt nur `PartialOrd`.
+
+Die Erweiterungs-Achse wird durch dieselbe Idee geschützt,
+aber mit einem *entscheidbaren* Tor statt einer
+Engine-Verpflichtung. Eine `ComplexIntegerLike`-/
+`ComplexLike`-Instanz wird nur zugelassen, wenn ihr
+Minimalpolynom irreduzibel ist — gleichbedeutend damit, dass
+ihre Diskriminante `c1² − 4c0 < 0` ist (imaginär-quadratisch).
+Der Grund ist Soundness: ein reduzibles Polynom vom Grad 2 hat
+Nullteiler, und ein Nullteiler im Träger ließe eine
+Grundgleichung zu einem falschen `0 = ungleich null`
+reduzieren und ein spurioses `unsat` melden. Die
+Reduktionsalgebra hinter der Norm ist in Verus vorab
+verifiziert; das Diskriminanten-Tor ist, was einen unsound
+Träger von vornherein aus der Datenbank fernhält.
 
 == Prädikatparameter an einer Relation
 

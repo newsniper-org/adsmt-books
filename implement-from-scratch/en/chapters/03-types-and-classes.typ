@@ -343,6 +343,29 @@ operation reduce into the integers):
   conjunction marker — no own methods, no own laws,
   everything inherited through the two premises.
 
+- *Field axis.* `RealLike(R)` is the field-side sibling of
+  `PartialIntegerLike` — the same `{add, mul, domain}` core,
+  but its order arrives through the instance's `PartialOrd(R)`
+  premise rather than being baked in. The genuine mathematical
+  `Real` additionally gets a separate `Ord(Real)` instance (a
+  dense total order); a `FloatingPoint` carrier would be
+  `RealLike` + `PartialOrd` but never `Ord`, since `NaN`
+  breaks totality.
+
+- *Extension axis.* `ComplexIntegerLike(C, B)` and
+  `ComplexLike(C, B)` are the degree-2 ring/field
+  *extensions* `C = a + bζ`, where the generator `ζ` is a root
+  of an imaginary-quadratic monic minimal polynomial
+  `x² + c1·x + c0`. They carry `{add, mul, norm}` — the norm
+  `N(a + bζ) = a² − c1·ab + c0·b²` maps a carrier element down
+  to its base — and premise the coefficient base:
+  `ComplexIntegerLike` over an `IntegerLike` base (instances
+  `ℤ[i]`, `ℤ[ω]`), `ComplexLike` over a `RealLike` base
+  (instance `ℂ = ℝ[i]`). Crucially they carry *no* order at
+  all (`ℂ` has no compatible total order), so they are
+  siblings of `IntegerLike` rather than subtraits with an
+  `Ord` premise.
+
 The premise-aware `Dict` is what makes inheritance work. The
 totality law of `Ord` references `le`, which lives in the
 `PartialOrd` dictionary; `Dict::method` resolves it through
@@ -367,6 +390,18 @@ admitted only if the engine discharges *totality* for its
 `le`; a carrier with no compatible total order — a future
 `FloatingPoint(M, E)` with `NaN`, say — is rejected by that
 gate and stays `PartialOrd` only.
+
+The extension axis is protected by the same idea, but with a
+*decidable* gate instead of an engine obligation. A
+`ComplexIntegerLike`/`ComplexLike` instance is admitted only
+if its minimal polynomial is irreducible — equivalently, if
+its discriminant `c1² − 4c0 < 0` (an imaginary-quadratic). The
+reason is soundness: a reducible degree-2 polynomial has zero
+divisors, and a zero divisor in the carrier would let a ground
+equation reduce to a false `0 = nonzero` and report a spurious
+`unsat`. The reduction algebra behind the norm is pre-verified
+in Verus; the discriminant gate is what keeps an unsound
+carrier out of the database to begin with.
 
 == Predicate parameters on a relation
 
