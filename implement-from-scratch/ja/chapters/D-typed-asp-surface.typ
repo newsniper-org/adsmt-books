@@ -145,6 +145,26 @@ p(X) :- d(X), not q(X).   %   二つの解集合、
 q(X) :- d(X), not p(X).   %   {d(x),p(x)} と {d(x),q(x)}
 ```
 
+== well-founded モデル(full 出力モード)
+
+typed-ASP face はランタイムから `adsmtr --asp`(または REPL の
+`:asp`)で到達する。既定(`--output-mode z3`)では答えは三状態へ
+collapse する。`--output-mode full`(`:full`)の下では、face は
+代わりに*3 値 well-founded モデル*を表面化する。すべての
+ground 原子は `true` / `false` / `undefined` に分類され、
+`undefined` 集合はちょうど well-founded 意味論が未解決のまま
+残す原子である — 例えば偶数ループ(`p :- not q. q :- not
+p.`)の振動する原子は、推測されるのではなく `undefined` と
+なる。描画形式は次のとおり。
+
+```text
+well-founded true={…} false={…} undefined={…}
+```
+
+ここで true は well-founded 下界、undefined はなお推測すべき
+残余、false はその他すべてである。これは観測 / 出力の表層で
+あり(実験的、AFT 採用)、collapse された判定は変わらない。
+
 == 仮説推論 — 規則の双対
 
 演繹と仮説推論は*一つの*規則 IR を共有する。前向き最小

@@ -4,6 +4,23 @@ The `lu-smt` command (provided by `adsmt-cli`) is the
 primary command-line entry point. This appendix is a
 quick reference.
 
+adsmt ships *three* command-line binaries; `lu-smt` is the
+main subject of this appendix, and the other two drive the
+lu-kb-successor surface:
+
+#table(
+  columns: 2,
+  align: left,
+  stroke: 0.5pt + gray,
+  table.header([*Binary*], [*Role*]),
+  [`lu-smt` (crate `adsmt-cli`)], [The SMT-LIB driver — the canonical SMT-LIB entry point and the focus below.],
+  [`adsmtc`], [The lu-kb-successor *compiler* (batch): reads a `.lukb` file or stdin, runs elaborate -> lower -> unified solve, and prints the `UnifiedVerdict`.],
+  [`adsmtr`], [The lu-kb-successor *runtime* + REPL: interactive or batch unified solving; `--asp` switches to the typed-ASP face.],
+)
+
+All three share the driver crate `adsmt-lukb-driver`
+(`solve_with_mode`).
+
 == Basic invocation
 
 ```bash
@@ -47,6 +64,7 @@ The exit code reflects the verdict:
   [`--abductive-tier <n>`], [Set tier (0 = off, 4 = full)],
   [`--trigger-mode <miller|free>`], [Restrict or allow non-Miller triggers],
   [`--timeout <ms>`], [Hard timeout in milliseconds],
+  [`--output-mode <z3|full>`], [Verdict detail: `z3` (default) collapses to `sat`/`unsat`/`unknown`; `full` un-collapses (5-level SMT precision lattice / 3-valued ASP well-founded model). Accepted by all three binaries.],
   [`--seed <n>`], [Random seed (for reproducibility)],
   [`-v` / `--verbose`], [Verbose output],
   [`-h` / `--help`], [Full help text],
@@ -73,6 +91,81 @@ The `:finite-field-*` keys can also be passed as
 startup flags; either route registers a `FiniteFieldTheory`
 plugin with the engine.  Mid-session `(set-option ...)`
 auto-registers the plugin with default knobs on first call.
+
+== Output modes
+
+`--output-mode <z3|full>` controls how much of the internal
+verdict is surfaced.
+
+`z3` (the default, and the historical behavior) collapses the
+verdict to the classic `sat` / `unsat` / `unknown`.
+
+`full` un-collapses it. For SMT it shows the 5-level precision
+lattice token:
+
+#table(
+  columns: 2,
+  align: left,
+  stroke: 0.5pt + gray,
+  table.header([*Token*], [*Meaning*]),
+  [`definite-sat`], [Trusted model],
+  [`possibly-sat`], [Collapses to `unknown` in z3 mode],
+  [`unknown`], [Undetermined],
+  [`possibly-unsat`], [Collapses to `unknown` in z3 mode],
+  [`definite-unsat`], [Trusted refutation],
+)
+
+Only a `definite-*` pole is a trusted model/refutation; a
+`possibly-*` collapses to the sound `unknown` in z3 mode. For
+ASP, `full` shows the 3-valued well-founded model (true /
+false / undefined atoms).
+
+On `lu-smt`, `--output-mode full` surfaces the 5-level lattice
+only when the binary is built with the `oxiz` feature (the
+OxiZ delegation is what produces the lattice); the in-script
+equivalent is `(set-option :oxiz.output-mode full)`. The exit
+code stays the collapsed value in both modes.
+
+== The lu-kb-successor CLIs (adsmtc / adsmtr)
+
+`adsmtc [--output-mode z3|full] <module.lukb>` (or stdin)
+compiles and unified-solves a lu-kb-successor program and
+prints the `UnifiedVerdict`:
+
+#table(
+  columns: 3,
+  align: left,
+  stroke: 0.5pt + gray,
+  table.header([*Verdict*], [*Exit*], [*Meaning*]),
+  [`unsat`], [1], [obligations discharged = VERIFIED],
+  [`sat`], [0], [a counterexample or model],
+  [`unknown`], [2], [undetermined],
+  [usage / IO error], [3], [bad arguments or read failure],
+)
+
+This *inverts* the `lu-smt` exit convention: a goal `G` is
+valid iff `H ∧ ¬G` is unsat, so a discharged obligation
+(VERIFIED) reads `unsat` and exits `1`.
+
+`adsmtr [--asp] [--output-mode z3|full] [file]` is the runtime
++ REPL: given a FILE it batch-solves; with no FILE it opens a
+REPL. The REPL commands are:
+
+#table(
+  columns: 2,
+  align: left,
+  stroke: 0.5pt + gray,
+  table.header([*Command*], [*Effect*]),
+  [`:check`], [Solve the accumulated buffer],
+  [`:reset`], [Clear the buffer],
+  [`:asp` / `:lukb`], [Switch paradigm],
+  [`:full` / `:z3`], [Switch output mode],
+  [`:quit`], [Exit],
+)
+
+`--asp` (or `:asp` in the REPL) switches to the typed-ASP
+face, which in `full` mode surfaces the 3-valued well-founded
+model (true / false / undefined atoms).
 
 == Abductive reasoning (SMT-LIB surface)
 

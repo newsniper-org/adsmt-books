@@ -151,6 +151,29 @@ p(X) :- d(X), not q(X).   %   two answer sets,
 q(X) :- d(X), not p(X).   %   {d(x),p(x)} and {d(x),q(x)}
 ```
 
+== The well-founded model (full output mode)
+
+The typed-ASP face is reached from the runtime via `adsmtr
+--asp` (or `:asp` in the REPL). By default (`--output-mode
+z3`) an answer collapses to a tri-state. Under `--output-mode
+full` (`:full`) the face instead surfaces the *3-valued
+well-founded model*: every ground atom is classified `true`,
+`false`, or `undefined`, where the `undefined` set is exactly
+the atoms the well-founded semantics leaves unresolved — e.g.
+the oscillating atoms of an even loop (`p :- not q. q :- not
+p.`) are `undefined` rather than guessed.
+
+The rendered form is
+
+```text
+well-founded true={…} false={…} undefined={…}
+```
+
+where `true` is the well-founded lower bound, `undefined` is
+the residual still to guess, and `false` is the rest. This is
+an observation/output surface (experimental, AFT-adopted); the
+collapsed verdict is unchanged.
+
 == Abduction — the rule's dual
 
 Deduction and abduction share *one* rule IR. The forward

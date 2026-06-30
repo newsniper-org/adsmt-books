@@ -81,6 +81,23 @@ Bool -> U` 를 선언한다. `= body` 가 *없으면* 함수는
 `assert (not phi)` 뒤에 `check-sat` 이 따르는 것에 대응하며,
 판정은 이름으로 보고된다.
 
+== 통합 판정(unified verdict)
+
+lu-kb 후속 모듈은 `adsmtc` 컴파일러(배치)나 `adsmtr`
+런타임/REPL이 풀이하며, *UnifiedVerdict* 를 생산한다 — SMT
+정밀도 쪽과 typed-ASP 부분성(partiality) 쪽이 서로 다른 질문에
+답하기에 의도적으로 하나의 격자로 융합하지 *않은* *분리곱
+(separated product)* `{ smt, asp }` 이다. asp 쪽은 typed-ASP
+face(부록 D)만 채우며, 순수 lu-kb 모듈은 smt 쪽을 사용한다.
+통합 판정은 두 쪽의 3-값 *Kleene 논리곱*을 통해 3상태로
+collapse한다 (어느 한 쪽의 `unsat` 이 전체를 지배한다).
+Verus/SMT 관례에 따라 목표 `G` 는 `H ∧ ¬G` 가 unsat일 때만
+valid하므로, *방출된(discharged)* 의무는 `unsat` 으로 읽힌다.
+`--output-mode full` 에서 smt 쪽은 5단계 정밀도 격자
+(`definite-sat` … `definite-unsat`)로 un-collapse한다. 이
+표면의 완전한 문서는 `docs/design/LUKB_SUCCESSOR_SURFACE.md`
+10절에 있다 (참조용이며 그 파일의 산문을 복제하지 않는다).
+
 == 정련 타입(Refinement types)
 
 *정련 타입* `{v: T | φ}` 은 기반 종 `T` 를 바인딩된 이름

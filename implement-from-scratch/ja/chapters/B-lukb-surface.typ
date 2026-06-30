@@ -79,6 +79,28 @@ SMT-LIB の `declare-sort` に相当。
 `assert (not phi)` の後に `check-sat` を続けたものの類比で
 あり、判定は名前で報告される。
 
+== 統合判定
+
+lu-kb 後継モジュールは `adsmtc` コンパイラ(バッチ)または
+`adsmtr` ランタイム / REPL によって求解され、*UnifiedVerdict*
+を生む。これは*分離積(separated product)* `{ smt, asp }` で
+あり、SMT 精度の側と typed-ASP 部分性の側は異なる問いに
+答えるため、意図的に単一の束へと融合され*ない*。asp 側は
+typed-ASP face(付録 D)によってのみ populate され、純粋な
+lu-kb モジュールは smt 側を動かす。
+
+統合判定は、その 2 側の 3 値*クリーネ連言(Kleene
+conjunction)*によって三状態へ collapse する(いずれかの側の
+`unsat` が全体を支配する)。Verus / SMT の規約に従い、goal
+`G` が valid であるのは `H ∧ ¬G` が unsat のときであるから、
+*discharge された*義務は `unsat` と読まれる。`--output-mode
+full` の下では smt 側が 5 段の精度束(`definite-sat` …
+`definite-unsat`)へ un-collapse する。
+
+この表層の全容は `docs/design/LUKB_SUCCESSOR_SURFACE.md` の
+第 10 節に記述されている(参照のみ。当該ファイルの記述を
+ここで複製しない)。
+
 == Refinement 型
 
 *refinement 型* `{v: T | φ}` は、基底ソート `T` を束縛名

@@ -3,6 +3,21 @@
 `lu-smt` コマンド(`adsmt-cli` が提供)は主要なコマンド
 ライン入口である。この付録はその簡易リファレンスである。
 
+この付録は主に `lu-smt` を扱うが、adsmt は実際には 3 つの
+コマンドラインバイナリを出荷している。後二者は lu-kb 後継
+表層(付録 B)のためのものであり、3 者は共有ドライバクレート
+`adsmt-lukb-driver`(`solve_with_mode`)の上に立つ。
+
+#table(
+  columns: 2,
+  align: left,
+  stroke: 0.5pt + gray,
+  table.header([*コマンド*], [*役割*]),
+  [`lu-smt`(`adsmt-cli`)], [SMT-LIB ドライバ。本付録の主題],
+  [`adsmtc`], [lu-kb 後継の*コンパイラ*(バッチ)。`.lukb` ファイルまたは標準入力を読み、elaborate -> lower -> 統合求解を実行し UnifiedVerdict を出力],
+  [`adsmtr`], [lu-kb 後継の*ランタイム + REPL*(対話的またはバッチの統合求解)。`--asp` で typed-ASP face に切り替える],
+)
+
 == 基本的な呼び出し
 
 ```bash
@@ -47,9 +62,82 @@ lu-smt -v script.smt2
   [`--trigger-mode <miller|free>`], [非 Miller トリガを制限または許可],
   [`--timeout <ms>`], [ミリ秒単位のハードタイムアウト],
   [`--seed <n>`], [乱数シード (再現性のため)],
+  [`--output-mode <z3|full>`], [判定の詳細度: `z3`(既定)は `sat`/`unsat`/`unknown` に collapse、`full` は un-collapse(5 段の SMT 精度束 / 3 値 ASP well-founded モデル)。3 バイナリすべてで受理],
   [`-v` / `--verbose`], [冗長出力],
   [`-h` / `--help`], [ヘルプ全文],
 )
+
+== 出力モード
+
+`--output-mode` は判定の詳細度を制御する。`z3`(既定、歴史的
+挙動)は判定を `sat` / `unsat` / `unknown` に collapse する。
+`full` はそれを un-collapse する。
+
+SMT では `full` は 5 段の精度束を表示する。
+
+#table(
+  columns: 2,
+  align: left,
+  stroke: 0.5pt + gray,
+  table.header([*トークン*], [*意味*]),
+  [`definite-sat`], [信頼されるモデル(充足の確定極)],
+  [`possibly-sat`], [sat の疑い — z3 モードでは健全な `unknown` に collapse],
+  [`unknown`], [中立],
+  [`possibly-unsat`], [unsat の疑い — z3 モードでは健全な `unknown` に collapse],
+  [`definite-unsat`], [信頼される反証(unsat の確定極)],
+)
+
+`definite-*` の極のみが信頼されるモデル / 反証であり、
+`possibly-*` は z3 モードでは健全な `unknown` に collapse する。
+ASP では `full` は 3 値 well-founded モデル(true / false /
+undefined 原子)を表示する。
+
+`lu-smt` では `--output-mode full` が 5 段を表面化するのは
+`oxiz` フィーチャ付きでビルドされたときに限る(束を生むのは
+OxiZ 委譲である)。スクリプト内の等価物は
+`(set-option :oxiz.output-mode full)` である。終了コードは
+いずれのモードでも collapse された値のままである。
+
+== lu-kb 後継 CLI(adsmtc / adsmtr)
+
+`adsmtc [--output-mode z3|full] <module.lukb>`(または標準
+入力)は lu-kb 後継プログラムをコンパイル + 統合求解し、
+UnifiedVerdict を出力する。
+
+#table(
+  columns: 3,
+  align: left,
+  stroke: 0.5pt + gray,
+  table.header([*判定*], [*終了*], [*意味*]),
+  [`unsat`], [1], [義務が discharge された = VERIFIED],
+  [`sat`], [0], [反例またはモデル],
+  [`unknown`], [2], [未決],
+  [使用法 / IO エラー], [3], [引数誤りまたは読み取り失敗],
+)
+
+これは `lu-smt` の終了規約を*反転*している。なぜなら goal
+`G` が valid であるのは `H ∧ ¬G` が unsat のとき、ちょうど
+そのときだからである。よって VERIFIED は `unsat`(終了 1)と
+読まれる。
+
+`adsmtr [--asp] [--output-mode z3|full] [file]` はランタイム +
+REPL である。FILE を与えればバッチ求解し、FILE がなければ
+REPL を開く。
+
+#table(
+  columns: 2,
+  align: left,
+  stroke: 0.5pt + gray,
+  table.header([*REPL コマンド*], [*効果*]),
+  [`:check`], [蓄積したバッファを求解],
+  [`:reset`], [バッファをクリア],
+  [`:asp` / `:lukb`], [パラダイムを切り替え],
+  [`:full` / `:z3`], [出力モードを切り替え],
+  [`:quit`], [終了],
+)
+
+`--asp`(または `:asp`)は typed-ASP face に切り替える。これは
+`full` モードでは 3 値 well-founded モデルを表面化する。
 
 == SMT-LIB レベルのオプション
 

@@ -4,6 +4,24 @@ Der Befehl `lu-smt` (bereitgestellt von `adsmt-cli`) ist der
 primäre Einstiegspunkt auf der Kommandozeile. Dieser Anhang
 ist eine Schnellreferenz.
 
+Mit RC.40 existieren *drei* Binärdateien. `lu-smt` ist und
+bleibt der kanonische SMT-LIB-Einstiegspunkt und das
+Hauptthema dieses Anhangs; die beiden neuen Binärdateien
+bedienen den lu-kb-Nachfolger:
+
+#table(
+  columns: 2,
+  align: left,
+  stroke: 0.5pt + gray,
+  table.header([*Binärdatei*], [*Rolle*]),
+  [`lu-smt` (`adsmt-cli`)], [Der SMT-LIB-Treiber — der kanonische SMT-LIB-Einstiegspunkt und das Hauptthema dieses Anhangs.],
+  [`adsmtc`], [Der lu-kb-Nachfolger-*Compiler* (Batch): liest eine `.lukb`-Datei oder stdin, durchläuft elaborate -> lower -> vereinheitlichtes Lösen und gibt das UnifiedVerdict aus.],
+  [`adsmtr`], [Die lu-kb-Nachfolger-*Laufzeit* + REPL: interaktives oder Batch-vereinheitlichtes Lösen; `--asp` schaltet auf die typed-ASP-Oberfläche um.],
+)
+
+Alle drei teilen sich die Treiber-Crate `adsmt-lukb-driver`
+(`solve_with_mode`).
+
 == Grundlegender Aufruf
 
 ```bash
@@ -48,9 +66,85 @@ Der Exit-Code spiegelt das Verdikt wider:
   [`--trigger-mode <miller|free>`], [Beschränkt oder erlaubt Nicht-Miller-Trigger],
   [`--timeout <ms>`], [Hartes Timeout in Millisekunden],
   [`--seed <n>`], [Zufalls-Seed (für Reproduzierbarkeit)],
+  [`--output-mode <z3|full>`], [Verdikt-Detailgrad: `z3` (Standard) kollabiert zu `sat`/`unsat`/`unknown`; `full` entkollabiert (5-stufiger SMT-Präzisionsverband / 3-wertiges ASP-Well-founded-Modell). Von allen drei Binärdateien akzeptiert.],
   [`-v` / `--verbose`], [Ausführliche Ausgabe],
   [`-h` / `--help`], [Vollständiger Hilfetext],
 )
+
+== Ausgabemodi
+
+`--output-mode` steuert den Detailgrad des Verdikts:
+
+- `z3` (Standard, das historische Verhalten) kollabiert das
+  Verdikt zu `sat` / `unsat` / `unknown`.
+- `full` entkollabiert es. Für SMT zeigt `full` den
+  5-stufigen Präzisionsverband:
+
+#table(
+  columns: 2,
+  align: left,
+  stroke: 0.5pt + gray,
+  table.header([*Token*], [*Bedeutung*]),
+  [`definite-sat`], [Vertrauenswürdiges Modell],
+  [`possibly-sat`], [Kollabiert im `z3`-Modus zum soliden `unknown`],
+  [`unknown`], [Unbestimmt],
+  [`possibly-unsat`], [Kollabiert im `z3`-Modus zum soliden `unknown`],
+  [`definite-unsat`], [Vertrauenswürdige Widerlegung],
+)
+
+Nur ein `definite-*`-Pol ist ein vertrauenswürdiges Modell /
+eine vertrauenswürdige Widerlegung; ein `possibly-*`
+kollabiert im `z3`-Modus zum soliden `unknown`. Für ASP zeigt
+`full` das 3-wertige Well-founded-Modell (true / false /
+undefined Atome).
+
+Auf `lu-smt` legt `--output-mode full` die 5 Stufen nur dann
+offen, wenn mit dem `oxiz`-Feature gebaut wurde (die
+OxiZ-Delegation erzeugt den Verband); das skriptinterne
+Äquivalent ist `(set-option :oxiz.output-mode full)`. Der
+Exit-Code bleibt in beiden Modi der kollabierte Wert.
+
+== Die lu-kb-Nachfolger-CLIs (adsmtc / adsmtr)
+
+`adsmtc [--output-mode z3|full] <module.lukb>` (oder stdin)
+kompiliert ein lu-kb-Nachfolger-Programm, löst es
+vereinheitlicht und gibt das UnifiedVerdict aus. Die
+Exit-Codes:
+
+#table(
+  columns: 3,
+  align: left,
+  stroke: 0.5pt + gray,
+  table.header([*Verdikt*], [*Exit*], [*Bedeutung*]),
+  [`unsat`], [1], [Verpflichtungen abgetragen = VERIFIZIERT],
+  [`sat`], [0], [Ein Gegenbeispiel oder Modell],
+  [`unknown`], [2], [Unbestimmt],
+  [Nutzungs- / IO-Fehler], [3], [Fehlerhafte Argumente oder Lesefehler],
+)
+
+Dies *invertiert* die `lu-smt`-Exit-Konvention, weil ein Ziel
+`G` genau dann gültig ist, wenn `H ∧ ¬G` unerfüllbar ist —
+ein VERIFIZIERTES Ziel liest sich daher als `unsat` (Exit 1).
+
+`adsmtr [--asp] [--output-mode z3|full] [datei]` ist die
+Laufzeit + REPL: mit einer DATEI löst es im Batch, ohne DATEI
+öffnet es eine REPL. Die REPL-Befehle:
+
+#table(
+  columns: 2,
+  align: left,
+  stroke: 0.5pt + gray,
+  table.header([*Befehl*], [*Wirkung*]),
+  [`:check`], [Den angesammelten Puffer lösen],
+  [`:reset`], [Den Puffer leeren],
+  [`:asp` / `:lukb`], [Das Paradigma umschalten],
+  [`:full` / `:z3`], [Den Ausgabemodus umschalten],
+  [`:quit`], [Beenden],
+)
+
+`--asp` (oder `:asp`) schaltet auf die typed-ASP-Oberfläche
+um, die im `full`-Modus das 3-wertige Well-founded-Modell
+offenlegt.
 
 == Optionen auf SMT-LIB-Ebene
 

@@ -3,6 +3,21 @@
 `lu-smt` 명령 (`adsmt-cli` 가 제공) 은 주요 명령줄
 진입점이다. 이 부록은 빠른 참조이다.
 
+adsmt는 이제 세 개의 명령줄 도구를 제공한다.
+
+#table(
+  columns: 2,
+  align: left,
+  stroke: 0.5pt + gray,
+  table.header([*명령*], [*역할*]),
+  [`lu-smt` (`adsmt-cli`)], [SMT-LIB 드라이버 — 이 부록의 주 대상이자 표준 SMT-LIB 진입점이다.],
+  [`adsmtc`], [lu-kb 후속(successor) *컴파일러*(배치): `.lukb` 파일이나 stdin을 읽어 elaborate -> lower -> 통합 풀이를 수행하고 UnifiedVerdict를 출력한다.],
+  [`adsmtr`], [lu-kb 후속 *런타임 + REPL*(대화형 또는 배치 통합 풀이): `--asp` 로 typed-ASP face로 전환한다.],
+)
+
+`adsmtc` 와 `adsmtr` 는 공유 드라이버 크레이트
+`adsmt-lukb-driver`(`solve_with_mode`)를 통해 풀이한다.
+
 == 기본 호출
 
 ```bash
@@ -46,6 +61,7 @@ lu-smt -v script.smt2
   [`--abductive-tier <n>`], [Tier 설정 (0 = 꺼짐, 4 = 전체)],
   [`--trigger-mode <miller|free>`], [비-Miller 트리거를 제한하거나 허용],
   [`--timeout <ms>`], [밀리초 단위의 하드 타임아웃],
+  [`--output-mode <z3|full>`], [판정 상세도: `z3`(기본값)는 `sat`/`unsat`/`unknown`으로 collapse; `full`은 un-collapse한다 (SMT 5단계 정밀도 격자 / 3-값 ASP well-founded 모델). 세 바이너리 모두 허용],
   [`--seed <n>`], [난수 시드 (재현성을 위해)],
   [`-v` / `--verbose`], [장황한 출력],
   [`-h` / `--help`], [전체 도움말 텍스트],
@@ -73,6 +89,73 @@ lu-smt -v script.smt2
 전달 가능. 어느 경로든 엔진에 `FiniteFieldTheory` 플러그인을
 등록한다. 세션 중 `(set-option ...)`은 첫 호출 시 default knob
 로 자동 등록.
+
+== 출력 모드
+
+`--output-mode <z3|full>` 는 판정이 보고되는 상세도를 고른다.
+
+`z3`(기본값, 역사적 동작)는 판정을 고전적인 `sat` / `unsat` /
+`unknown` 으로 collapse한다. `full`은 그것을 un-collapse한다.
+SMT의 경우 `full`은 5단계 정밀도 격자(precision lattice)를
+보인다.
+
+#table(
+  columns: 2,
+  align: left,
+  stroke: 0.5pt + gray,
+  table.header([*토큰*], [*의미*]),
+  [`definite-sat`],   [신뢰되는 모델],
+  [`possibly-sat`],   [sat일 수 있으나 미확정 → z3 모드에서 `unknown`],
+  [`unknown`],        [미결정],
+  [`possibly-unsat`], [unsat일 수 있으나 미확정 → z3 모드에서 `unknown`],
+  [`definite-unsat`], [신뢰되는 반박],
+)
+
+`definite-*` 극(pole)만이 신뢰되는 모델/반박이며, `possibly-*`
+는 z3 모드에서 건전한 `unknown`으로 collapse한다. ASP의 경우
+`full`은 3-값 well-founded 모델(true / false / undefined 원자)을
+보인다.
+
+`lu-smt`에서 `--output-mode full`은 `oxiz` feature로 빌드했을
+때에만 5단계를 노출한다(격자는 OxiZ 위임이 생산한다).
+스크립트 내 등가물은 `(set-option :oxiz.output-mode full)`이다.
+종료 코드는 두 모드 모두에서 collapse된 값으로 유지된다.
+
+== lu-kb 후속 CLI (adsmtc / adsmtr)
+
+`adsmtc [--output-mode z3|full] <module.lukb>`(또는 stdin)는
+lu-kb 후속 프로그램을 컴파일 + 통합 풀이하고 UnifiedVerdict를
+출력한다. 종료 코드는 `lu-smt`의 관례를 *뒤집는다*: 목표 `G`는
+`H ∧ ¬G`가 unsat일 때만 valid하므로, VERIFIED는 `unsat`(종료
+1)으로 읽힌다.
+
+#table(
+  columns: 3,
+  align: left,
+  stroke: 0.5pt + gray,
+  table.header([*판정*], [*종료*], [*의미*]),
+  [`unsat`], [1], [의무가 방출됨(discharged) = VERIFIED],
+  [`sat`],   [0], [반례 또는 모델],
+  [`unknown`], [2], [미결정],
+  [usage / IO 오류], [3], [잘못된 인자 또는 읽기 실패],
+)
+
+`adsmtr [--asp] [--output-mode z3|full] [file]`은 런타임 +
+REPL이다. FILE이 있으면 배치로 풀이하고, FILE이 없으면 REPL을
+연다. `--asp`(또는 REPL에서 `:asp`)는 typed-ASP face로
+전환하며, `full` 모드에서는 3-값 well-founded 모델을 노출한다.
+
+#table(
+  columns: 2,
+  align: left,
+  stroke: 0.5pt + gray,
+  table.header([*REPL 명령*], [*효과*]),
+  [`:check`], [누적된 버퍼를 풀이],
+  [`:reset`], [버퍼를 비움],
+  [`:asp` / `:lukb`], [패러다임 전환],
+  [`:full` / `:z3`], [출력 모드 전환],
+  [`:quit`], [종료],
+)
 
 == 가설추론(abductive reasoning) — SMT-LIB 표면
 

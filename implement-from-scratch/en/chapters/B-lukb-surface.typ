@@ -86,6 +86,28 @@ and Hk) ==> G`. A goal is the analogue of `assert (not
 phi)` followed by `check-sat`; the verdict is reported
 by name.
 
+== The unified verdict
+
+A lu-kb-successor module is solved by the `adsmtc` compiler
+(batch) or the `adsmtr` runtime/REPL, producing a
+*UnifiedVerdict* — a *separated product* `{ smt, asp }` whose
+SMT-precision side and typed-ASP-partiality side answer
+different questions and so are deliberately *not* fused into
+one lattice. The `asp` side is populated only by the
+typed-ASP face (appendix D); a pure lu-kb module exercises the
+`smt` side.
+
+The unified verdict collapses to a tri-state via the 3-valued
+*Kleene conjunction* of its two sides — an `unsat` on either
+side dominates the whole. Per the Verus/SMT convention a goal
+`G` is valid iff `H ∧ ¬G` is unsat, so a *discharged*
+obligation reads `unsat`. Under `--output-mode full` the `smt`
+side un-collapses to the 5-level precision lattice
+(`definite-sat` … `definite-unsat`).
+
+The surface is documented in full in
+`docs/design/LUKB_SUCCESSOR_SURFACE.md` section 10.
+
 == Refinement types
 
 A *refinement type* `{v: T | φ}` is a base sort `T`

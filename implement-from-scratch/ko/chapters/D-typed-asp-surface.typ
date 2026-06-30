@@ -143,6 +143,21 @@ p(X) :- d(X), not q(X).   %   두 답 집합,
 q(X) :- d(X), not p(X).   %   {d(x),p(x)}와 {d(x),q(x)}
 ```
 
+== well-founded 모델 (full 출력 모드)
+
+typed-ASP face는 런타임에서 `adsmtr --asp`(또는 REPL의
+`:asp`)로 도달한다. 기본값(`--output-mode z3`)에서는 답이
+3상태로 collapse한다. `--output-mode full`(`:full`)에서는
+face가 대신 *3-값 well-founded 모델*을 노출한다: 모든 ground
+원자가 `true`, `false`, `undefined` 중 하나로 분류되며,
+`undefined` 집합은 well-founded 의미론이 미해소로 남기는 원자
+정확히 그것이다 — 예컨대 짝수 루프(`p :- not q. q :- not p.`)의
+진동하는 원자들은 추측되는 대신 `undefined`다. 렌더 형식은
+`well-founded true={…} false={…} undefined={…}`이다
+(true = well-founded 하계, undefined = 아직 추측할 잔여,
+false = 나머지). 이는 관찰/출력 표면이며(실험적, AFT 채택),
+collapse된 판정은 바뀌지 않는다.
+
 == 귀추 — 규칙의 쌍대
 
 연역과 귀추는 *하나의* 규칙 IR을 공유한다. 전방 최소

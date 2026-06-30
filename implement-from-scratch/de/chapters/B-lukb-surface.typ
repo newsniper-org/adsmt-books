@@ -88,6 +88,30 @@ geschrieben werden, das zur Parse-Zeit zu
 das Analogon zu `assert (not phi)` gefolgt von `check-sat`;
 das Urteil wird namentlich gemeldet.
 
+== Das vereinheitlichte Verdikt
+
+Ein lu-kb-Nachfolger-Modul wird vom `adsmtc`-Compiler (Batch)
+oder von der `adsmtr`-Laufzeit / REPL gelöst und liefert ein
+*UnifiedVerdict* — ein *separiertes Produkt* `{ smt, asp }`,
+dessen SMT-Präzisions-Seite und typed-ASP-Partialitäts-Seite
+unterschiedliche Fragen beantworten und daher bewusst *nicht*
+zu einem einzigen Verband verschmolzen werden. Die asp-Seite
+wird nur von der typed-ASP-Oberfläche (Anhang D) gefüllt; ein
+reines lu-kb-Modul beansprucht die smt-Seite. Das
+vereinheitlichte Verdikt kollabiert über die 3-wertige
+*Kleene-Konjunktion* seiner beiden Seiten zu einem Tri-State
+(ein `unsat` auf einer der beiden Seiten dominiert das Ganze).
+Gemäß der Verus-/SMT-Konvention ist ein Ziel `G` genau dann
+gültig, wenn `H ∧ ¬G` unerfüllbar ist — eine *abgetragene*
+Verpflichtung liest sich daher als `unsat`. Unter
+`--output-mode full` entkollabiert die smt-Seite zum
+5-stufigen Präzisionsverband (`definite-sat` …
+`definite-unsat`).
+
+Die Oberfläche ist vollständig in
+`docs/design/LUKB_SUCCESSOR_SURFACE.md` Abschnitt 10
+dokumentiert.
+
 == Verfeinerungstypen
 
 Ein *Verfeinerungstyp* `{v: T | φ}` ist eine Basissorte `T`,

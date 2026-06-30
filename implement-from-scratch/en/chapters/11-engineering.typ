@@ -27,7 +27,7 @@ adsmt-quant/        Quantifier instantiation
 adsmt-abduce/       Abductive layer
 adsmt-engine/       DPLL(T) + CDCL + bit-blasting
 adsmt-parser/       SMT-LIB v2 + lu-kb parser
-adsmt-cli/          `lu-smt` binary
+adsmt-cli/          `lu-smt` (+ siblings `adsmtc`/`adsmtr`/`adsmt-lukb-driver`)
 adsmt-lsp/          tower-lsp server
 adsmt-ffi/          C ABI
 adsmt-meta/         Umbrella crate

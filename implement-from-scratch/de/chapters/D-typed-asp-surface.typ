@@ -168,6 +168,24 @@ p(X) :- d(X), not q(X).   %   zwei Antwortmengen,
 q(X) :- d(X), not p(X).   %   {d(x),p(x)} und {d(x),q(x)}
 ```
 
+== Das Well-founded-Modell (Ausgabemodus `full`)
+
+Die typed-ASP-Oberfläche wird aus der Laufzeit über
+`adsmtr --asp` (oder `:asp` in der REPL) erreicht.
+Standardmäßig (`--output-mode z3`) kollabiert eine Antwort zu
+einem Tri-State. Unter `--output-mode full` (`:full`) legt die
+Oberfläche stattdessen das *3-wertige Well-founded-Modell*
+offen: jedes Grundatom wird als `true`, `false` oder
+`undefined` klassifiziert, wobei die `undefined`-Menge genau
+die Atome sind, die die Well-founded-Semantik unaufgelöst
+lässt — z. B. sind die oszillierenden Atome eines geraden
+Zyklus (`p :- not q. q :- not p.`) `undefined` statt geraten.
+Die gerenderte Form ist `well-founded true={…} false={…}
+undefined={…}` (true = die Well-founded-Untergrenze,
+undefined = der noch zu ratende Rest, false = der Rest). Dies
+ist eine Beobachtungs- / Ausgabe-Oberfläche (experimentell,
+AFT-adoptiert) und das kollabierte Verdikt bleibt unverändert.
+
 == Abduktion — das Dual der Regel
 
 Deduktion und Abduktion teilen sich *eine* Regel-IR. Der
