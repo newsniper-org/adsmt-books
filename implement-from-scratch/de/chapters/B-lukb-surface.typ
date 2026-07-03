@@ -337,6 +337,20 @@ Konvention, sondern eine abgetragene Beweispflicht, im selben
 Geist wie das Konstruktionsstellen-Ziel, das eine
 Verfeinerungs-`fn`-Definition trägt.
 
+Die `=`/`!=` und Vergleiche der Oberfläche werden von der
+`Eq`/`Ord`/`UpCast`-Relationsfamilie *gegated*
+(`Eq`-Gating im Rust-Stil): Jede deklarierte Sorte erhält
+automatisch ein Builtin-`Eq`, das `Eq` einer
+`data`-Deklaration wird *gesetzeskonform* zugelassen (die
+Engine trägt seine Äquivalenz- + Entscheidbarkeitsgesetze
+ab), und sortenübergreifende numerische Gleichheit und
+Vergleiche lösen `PartialEq`/`PartialOrd`-Instanzen auf,
+deren Prämissen den die Injektion ausführenden `UpCast`
+benennen. Die von verus emittierten `is-{ctor}`-Testeraufrufe
+reiten auf der `Eq`-Instanz des Datentyps — nulläre
+Konstruktoren entzuckern zu `x = C`, feldtragende zum
+definitorischen `match x { C(..) => true, _ => false }`.
+
 == Vergleich mit SMT-LIB
 
 lu-kb ist auf die Verfassung von Beweispflichten mit reichen

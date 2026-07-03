@@ -316,6 +316,41 @@ pub fn install_numberlike_checked(
 }
 ```
 
+== The `Eq`/`Ord`/`UpCast` family
+
+Equality and comparison are themselves type relations. The
+hierarchy is five relations: `PartialEq(A, B)`
+(heterogeneous equality — declaring an instance with `A ≠ B`
+implicitly synchronizes the mirror `PartialEq(B, A)`; an
+explicit mirror is a coherence error), `Eq(T) :
+PartialEq(T, T)`, `UpCast(A, B)` (the *failure-free* cast
+into a supertype — the generalization of the numeric
+injection lattice `Nat ⊂ WNat ⊂ Int ⊂ Real`; `UpCast(T, T)`
+is a resolution-level builtin, and an explicit identity
+instance is rejected at admission), `PartialOrd(T, A) :
+PartialEq(T, A) + UpCast(T, A)` (a cross-sort comparison is
+decided in the upcast target), and `Ord(T) :
+PartialOrd(T, T) + Eq(T)`.
+
+The lukb elaborator consumes the family as a *license*
+(Rust-style `Eq`-gating): `=`/`!=` at one sort requires
+`Eq(T)`; across sorts, `PartialEq(A, B)` (the synchronized
+mirror covers the flipped operand order); `< <= > >=`
+resolve `PartialOrd`. Every declared sort is auto-granted a
+builtin `Eq`, so the gate is semantically explicit but
+observationally conservative — and a `data` declaration's
+grant is *lawful*: `Eq` carries the equivalence and
+(classical) decidability laws over the inherited `eq` (the
+kernel `=` at the carrier, supplied by the diagonal
+`PartialEq` premise's method body), and the live driver's
+engine-backed prover discharges them per datatype at
+admission. The verus `is-{ctor}` testers ride this
+instance: a nullary tester elaborates to the licensed
+equality `x = C`, a field-bearing one to the definitional
+`match x { C(..) => true, _ => false }` — whose lowering
+image is exactly the selector-applied shape equality the
+engine's datatype theory decides.
+
 == The `*Like` family
 
 The flagship lawful relations are the `*Like` number-system

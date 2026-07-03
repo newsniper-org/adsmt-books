@@ -323,6 +323,19 @@ instance is admitted only if adsmt's own engine proves
 discharged obligation, in the same spirit as the
 construct-site goal a refinement `fn` definition carries.
 
+The surface's `=`/`!=` and comparisons are *gated* by the
+`Eq`/`Ord`/`UpCast` relation family (Rust-style
+`Eq`-gating): every declared sort is auto-granted a
+builtin `Eq`, a `data` declaration's `Eq` is admitted
+*lawfully* (the engine discharges its equivalence +
+decidability laws), and cross-sort numeric equality and
+comparison resolve `PartialEq`/`PartialOrd` instances
+whose premises name the `UpCast` performing the injection.
+The verus-emitted `is-{ctor}` tester calls ride the
+datatype's `Eq` instance — nullary constructors desugar to
+`x = C`, field-bearing ones to the definitional
+`match x { C(..) => true, _ => false }`.
+
 == Comparison to SMT-LIB
 
 lu-kb is shaped for authoring obligations with rich

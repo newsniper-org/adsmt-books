@@ -304,6 +304,38 @@ pub fn install_numberlike_checked(
 }
 ```
 
+== `Eq`/`Ord`/`UpCast` 계열
+
+동등성과 비교 자체도 타입 관계이다. 계층은 다섯 관계로
+이루어진다: `PartialEq(A, B)` (이종 동등성 — `A ≠ B`인
+인스턴스를 선언하면 거울 `PartialEq(B, A)`가 암시적으로
+동기화되며, 명시적 거울 선언은 일관성 오류이다), `Eq(T) :
+PartialEq(T, T)`, `UpCast(A, B)` (상위 자료형으로의
+*실패 없는* 캐스팅 — 숫자 주입 격자 `Nat ⊂ WNat ⊂ Int ⊂
+Real`의 일반화; `UpCast(T, T)`는 해석-수준 빌트인이며
+명시적 항등 인스턴스는 수용 시점에 거부된다),
+`PartialOrd(T, A) : PartialEq(T, A) + UpCast(T, A)`
+(교차-소트 비교는 업캐스트 대상에서 결정된다), 그리고
+`Ord(T) : PartialOrd(T, T) + Eq(T)`.
+
+lukb elaborator는 이 계열을 *라이선스*로 소비한다
+(Rust식 `Eq`-게이팅): 한 소트에서의 `=`/`!=`는 `Eq(T)`를,
+소트를 가로지르면 `PartialEq(A, B)`를 (동기화된 거울이
+뒤집힌 피연산자 순서를 덮는다), `< <= > >=`는
+`PartialOrd`를 요구한다. 선언된 모든 소트는 빌트인 `Eq`를
+자동 부여받으므로 게이트는 의미론적으로 명시적이되
+관찰상으로는 보수적이다 — 그리고 `data` 선언의 부여는
+*합법적(lawful)*이다: `Eq`는 상속된 `eq`(캐리어에서의
+커널 `=`, 대각 `PartialEq` premise의 메서드 본문이 공급)
+위에 동치 법칙과 (고전적) 결정성 법칙을 운반하며, 라이브
+드라이버의 엔진-지원 prover가 datatype마다 수용 시점에
+이를 방증한다. verus의 `is-{ctor}` tester는 이 인스턴스를
+탄다: nullary tester는 라이선스된 등식 `x = C`로,
+필드-보유 tester는 정의적
+`match x { C(..) => true, _ => false }`로 elaborate되며 —
+후자의 lowering 이미지는 정확히 엔진의 datatype 이론이
+결정하는 selector-적용 형태 등식이다.
+
 == `*Like` 계열
 
 대표적인 법칙적 관계는 `*Like` 수-체계 계열이며, 실제

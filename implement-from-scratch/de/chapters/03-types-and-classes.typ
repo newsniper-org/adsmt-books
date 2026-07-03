@@ -350,6 +350,44 @@ pub fn install_numberlike_checked(
 }
 ```
 
+== Die `Eq`/`Ord`/`UpCast`-Familie
+
+Gleichheit und Vergleich sind selbst Typrelationen. Die
+Hierarchie besteht aus fünf Relationen: `PartialEq(A, B)`
+(heterogene Gleichheit — die Deklaration einer Instanz mit
+`A ≠ B` synchronisiert implizit das Spiegelbild
+`PartialEq(B, A)`; ein explizites Spiegelbild ist ein
+Kohärenzfehler), `Eq(T) : PartialEq(T, T)`, `UpCast(A, B)`
+(der *fehlschlagfreie* Cast in einen Obertyp — die
+Verallgemeinerung des numerischen Injektionsgitters
+`Nat ⊂ WNat ⊂ Int ⊂ Real`; `UpCast(T, T)` ist ein Builtin
+auf Auflösungsebene, und eine explizite Identitätsinstanz
+wird bei der Zulassung abgelehnt), `PartialOrd(T, A) :
+PartialEq(T, A) + UpCast(T, A)` (ein sortenübergreifender
+Vergleich wird im Upcast-Ziel entschieden) und `Ord(T) :
+PartialOrd(T, T) + Eq(T)`.
+
+Der lukb-Elaborator konsumiert die Familie als *Lizenz*
+(`Eq`-Gating im Rust-Stil): `=`/`!=` auf einer Sorte
+verlangt `Eq(T)`; über Sorten hinweg `PartialEq(A, B)` (das
+synchronisierte Spiegelbild deckt die vertauschte
+Operandenreihenfolge ab); `< <= > >=` lösen `PartialOrd`
+auf. Jede deklarierte Sorte erhält automatisch ein
+Builtin-`Eq`, das Gate ist also semantisch explizit, aber
+beobachtbar konservativ — und die Gewährung einer
+`data`-Deklaration ist *gesetzeskonform*: `Eq` trägt die
+Äquivalenz- und (klassischen) Entscheidbarkeitsgesetze über
+dem geerbten `eq` (das Kernel-`=` am Träger, geliefert vom
+Methodenrumpf der diagonalen `PartialEq`-Prämisse), und der
+engine-gestützte Prover des Live-Treibers trägt sie pro
+Datentyp bei der Zulassung ab. Die von verus emittierten
+`is-{ctor}`-Tester reiten auf dieser Instanz: ein nullärer
+Tester elaboriert zur lizenzierten Gleichung `x = C`, ein
+feldtragender zum definitorischen
+`match x { C(..) => true, _ => false }` — dessen
+Lowering-Bild genau die selektor-applizierte Formgleichung
+ist, die die Datentyp-Theorie der Engine entscheidet.
+
 == Die `*Like`-Familie
 
 Die Aushänge-Schilder unter den gesetzeskonformen
