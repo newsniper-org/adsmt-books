@@ -334,7 +334,12 @@ whose premises name the `UpCast` performing the injection.
 The verus-emitted `is-{ctor}` tester calls ride the
 datatype's `Eq` instance — nullary constructors desugar to
 `x = C`, field-bearing ones to the definitional
-`match x { C(..) => true, _ => false }`.
+`match x { C(..) => true, _ => false }`. A NAMED field is
+likewise callable as its *selector* (`pred(n)` — verus
+emits AIR selector applies verbatim): the call rewrites
+onto the canonical positional selector the lowering and
+the engine's datatype theory share; an ambiguous field
+name (declared by two constructors) refuses to guess.
 
 == Comparison to SMT-LIB
 

@@ -350,6 +350,13 @@ benennen. Die von verus emittierten `is-{ctor}`-Testeraufrufe
 reiten auf der `Eq`-Instanz des Datentyps — nulläre
 Konstruktoren entzuckern zu `x = C`, feldtragende zum
 definitorischen `match x { C(..) => true, _ => false }`.
+Ein BENANNTES Feld ist ebenso als sein *Selektor* aufrufbar
+(`pred(n)` — verus emittiert AIR-Selektoranwendungen
+wörtlich): der Aufruf wird auf den kanonischen positionalen
+Selektor umgeschrieben, den das Lowering und die
+Datentyp-Theorie der Engine teilen; ein mehrdeutiger
+Feldname (von zwei Konstruktoren deklariert) verweigert
+das Raten.
 
 == Vergleich mit SMT-LIB
 

@@ -305,6 +305,11 @@ premise로 명명하는 `PartialEq`/`PartialOrd` 인스턴스를
 datatype의 `Eq` 인스턴스를 탄다 — nullary 생성자는
 `x = C`로, 필드-보유 생성자는 정의적
 `match x { C(..) => true, _ => false }`로 desugar된다.
+이름 있는 필드는 마찬가지로 그 *selector*로 호출할 수
+있다 (`pred(n)` — verus는 AIR selector 적용을 그대로
+방출한다): 호출은 lowering과 엔진의 datatype 이론이
+공유하는 정준 위치 selector로 재작성되며, 두 생성자가
+같은 필드 이름을 선언한 모호한 경우는 추측을 거부한다.
 
 == SMT-LIB와의 비교
 
