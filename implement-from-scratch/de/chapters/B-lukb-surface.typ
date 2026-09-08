@@ -60,11 +60,17 @@ Jede Parametergruppe `names: ty` teilt sich einen Typ, sodass
 deklariert. *Ohne* `= body` ist die Funktion eine opake
 *Signatur* (ein `open`-Symbol, das an seinem Pfeiltyp
 postuliert wird, wobei `Bool` auf `Prop` abgebildet wird);
-mit einem `= body` ist sie eine nichtrekursive *Definition*
+mit einem `= body` ist sie eine *Definition*
 (`f := λ(params). body`), die beim Solver-Lowering
-δ-entfaltet wird. Ein Body, der `f` erwähnt (echte
-Rekursion), benötigt das Kern-`fix` und ist ein späterer
-Abschnitt.
+δ-entfaltet wird. Ein Body, der `f` erwähnt, ist
+*rekursiv* und benötigt den `rec`-Modifikator
+(`rec fn f(...) = ...`); er wird zum Kern-`fix`
+elaboriert, über den die strukturelle Abstiegs-Wache
+entscheidet — ein Fehlschlag ist eine Ablehnung, nie eine
+stille Zulassung. Definitionen, die *einander* erwähnen,
+werden als eine Gruppe geschrieben,
+`rec fn f(...) = ... and fn g(...) = ...`, und gemeinsam
+unter einer gruppenweiten Wache zugelassen.
 
 *`data <name> = <ctor> | ...`* — Ein nicht-parametrischer
 induktiver Datentyp, elaboriert zu `declare_inductive`. Jeder

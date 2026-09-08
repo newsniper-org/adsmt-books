@@ -60,10 +60,15 @@ Each parameter group `names: ty` shares a type, so
 -> Bool -> U`. With *no* `= body` the function is an
 opaque *signature* (an `open` symbol postulated at its
 arrow type, `Bool` mapping to `Prop`); with a `= body`
-it is a non-recursive *definition* (`f := λ(params).
-body`), δ-unfolded at solver lowering. A body that
-mentions `f` (genuine recursion) needs the kernel `fix`
-and is a later slice.
+it is a *definition* (`f := λ(params). body`),
+δ-unfolded at solver lowering. A body that mentions `f`
+is *recursive* and needs the `rec` modifier
+(`rec fn f(...) = ...`); it elaborates to the kernel
+`fix`, whose structural-decrease guard decides it — a
+guard failure is a refusal, never a silent admission.
+Definitions that mention *each other* are written as one
+group, `rec fn f(...) = ... and fn g(...) = ...`, and are
+admitted together under a group-wide structural guard.
 
 *`data <name> = <ctor> | ...`* — A non-parametric
 inductive datatype, elaborated to `declare_inductive`.
